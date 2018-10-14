@@ -11,7 +11,7 @@
 
   <modules>
     <module>converge</module>
-    <module>onekg</modue>
+    <module>1000g</modue>
   </modules>
 
   <properties>

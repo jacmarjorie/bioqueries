@@ -8,11 +8,11 @@ object Utils extends Serializable{
 
     def reportGenotypeType(gt: Genotype): Int = {
       gt match {
-        case gt if gt.isNoCall => 0;
-        //case gt if gt.isHomRef => 0;
+        case gt if gt.isHomRef => 0;
         case gt if gt.isHet => 1;
         case gt if gt.isHomVar => 2;
-        //case gt if gt.isNoCall => 3;
+        case gt if gt.isNoCall => 3;
+        case _ => 4;
       }
     }
 

@@ -42,7 +42,7 @@ object App{
     val clincBroadcast = spark.sparkContext.broadcast(clinic) 
     
     val query_regions = List(
-      List("PTEN"))/**,
+      List("PTEN"),
       List("PTEN", "TP53"),
       List("PTEN", "TP53","ACADM"),
       List("PTEN", "TP53","ACADM","NGF"),
@@ -52,7 +52,7 @@ object App{
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1"),
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1", "TGFBI", "GPBP1"),
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1", "TGFBI", "GPBP1", "ECOP", "ACTR3B")
-    )*/
+    )
     
     // group by binary variable
     val q1 = Query1

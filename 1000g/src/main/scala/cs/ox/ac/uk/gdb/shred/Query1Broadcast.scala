@@ -15,8 +15,8 @@ object Query1Broadcast{
   
   var get_skew = false
   var label = "1000g"
-  var outfile = "/home/hadoop/shredding_q1_bc.csv"
-  var outfile2 = "/home/hadoop/shredding_q1_bc_partitions.csv"
+  var outfile = "/mnt/shredding_q1_bc.csv"
+  var outfile2 = "/mnt/shredding_q1_bc_partitions.csv"
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
@@ -35,9 +35,8 @@ object Query1Broadcast{
     }
     var start = System.currentTimeMillis()
     //flatten
-    val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
+    val genotypes = vs.map( v => v.getSampleNames.toList.map(s => 
+        (s, (v.getContig, v.getStart, Utils.reportGenotypeType(v.getGenotype(s)))))).flatMap(x => x)
 
     val clinical = clin.value.rdd.map(s => (s.getString(1), s.getInt(4)))
     val alleleCounts = genotypes.join(clinical)
@@ -48,14 +47,14 @@ object Query1Broadcast{
                               case 0 => (2, 0) //homref
                               case 1 => (1, 1) //het
                               case 2 => (0, 2) //homvar
-                              case 3 => (0, 0) //nocall
+                              case _ => (0, 0) //nocall
                           }},
                           (acc: (Int, Int), genotype) => {
                             genotype match {
                               case 0 => (acc._1 + 2, acc._2 + 0) //homref
                               case 1 => (acc._1 + 1, acc._2 + 1) //het
                               case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-                              case 3 => (acc._1 + 0, acc._2 + 0) //nocall
+                              case _ => (acc._1 + 0, acc._2 + 0) //nocall
                           }},
                           (acc1: (Int, Int), acc2: (Int, Int)) => {
                             (acc1._1 + acc2._1, acc1._2 + acc2._2)
@@ -110,14 +109,14 @@ object Query1Broadcast{
           case 0 => (2, 0) //homref
           case 1 => (1, 1) //het
           case 2 => (0, 2) //homvar
-          case 3 => (0, 0) //nocall
+          case _ => (0, 0) //nocall
       }},
       (acc: (Int, Int), genotype) => {
         genotype match {
           case 0 => (acc._1 + 2, acc._2 + 0) //homref
           case 1 => (acc._1 + 1, acc._2 + 1) //het
           case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-          case 3 => (acc._1 + 0, acc._2 + 0) //nocall
+          case _ => (acc._1 + 0, acc._2 + 0) //nocall
       }},
       (acc1: (Int, Int), acc2: (Int, Int)) => {
         (acc1._1 + acc2._1, acc1._2 + acc2._2)
