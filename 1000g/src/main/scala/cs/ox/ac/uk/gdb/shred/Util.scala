@@ -1,4 +1,4 @@
-package cs.ox.ac.uk.shred.test.1000g
+package cs.ox.ac.uk.shred.test.onekg
 
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._

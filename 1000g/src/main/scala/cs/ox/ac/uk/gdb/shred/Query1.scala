@@ -1,4 +1,4 @@
-package cs.ox.ac.uk.shred.test.1000g
+package cs.ox.ac.uk.shred.test.onekg
 
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
@@ -14,7 +14,7 @@ object Query1{
   
   var get_skew = false
   var label = "1000g"
-  var outfile = "/home/hadoop/shredding_q1.csv""
+  var outfile = "/home/hadoop/shredding_q1.csv"
   var outfile2 = "/home/hadoop/shredding_q1_partitions.csv"
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
@@ -38,8 +38,8 @@ object Query1{
     val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
         (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
 
-    val clin = clinical.select("individual_id", "gender").rdd.map(s => (s.getString(0), s.getInt(1)))
-    val alleleCounts = genotypes.join(clin)
+    val clinical = clin.select("individual_id", "gender").rdd.map(s => (s.getString(0), s.getInt(1)))
+    val alleleCounts = genotypes.join(clinical)
                         .map( x => ((x._2._1._1, x._2._1._2, x._2._2), x._2._1._3))
                         .combineByKey(
                           (genotype) => {
@@ -97,7 +97,7 @@ object Query1{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
 
-    val q1_dict_2 = clinical.select("individual_id", "gender").rdd.map {
+    val q1_dict_2 = clin.select("individual_id", "gender").rdd.map {
         c => (c.getString(0), c.getInt(1))
     }
     val q1_dict = q1_dict_1.join(q1_dict_2).map{

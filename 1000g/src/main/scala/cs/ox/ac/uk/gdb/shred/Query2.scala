@@ -1,4 +1,4 @@
-package cs.ox.ac.uk.shred.test.1000g
+package cs.ox.ac.uk.shred.test.onekg
 
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
@@ -15,8 +15,8 @@ object Query2{
   
   var get_skew = true
   var label = "1000g"
-  var outfile = "/mnt/app_hdd/scratch/flint-spark/shredding_q2.csv"
-  var outfile2 = "/mnt/app_hdd/scratch/flint-spark/shredding_q2_partitions.csv"
+  var outfile = "/home/hadoop/shredding_q2.csv"
+  var outfile2 = "/home/hadoop/shredding_q2_partitions.csv"
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
@@ -38,7 +38,7 @@ object Query2{
     val rdd = vs.zipWithUniqueId
     val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s =>
         (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)    
-    val clin = clinical.select("individual_id", "population").rdd.map(s => (s.getString(0), s.getString(1)))
+    val clinical = clin.select("individual_id", "population").rdd.map(s => (s.getString(0), s.getString(1)))
   
     //query on flatten
     val alleleCounts = genotypes.join(clinical)
@@ -100,7 +100,7 @@ object Query2{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
     
-    val clin = clinical.select("individual_id", "population").rdd.map(s => (s.getString(0), s.getString(1)))
+    val clinical = clin.select("individual_id", "population").rdd.map(s => (s.getString(0), s.getString(1)))
     val q2_dict = q2_dict_1.join(clinical).map{
         case (_, ((l, gt_call), population)) => (l, population) -> gt_call
     }.combineByKey(
