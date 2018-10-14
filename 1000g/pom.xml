@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <artifactId>shred-test-1000g</artifactId>
-    <groupId>cs.ox.ac.uk.shred.test.1000g</groupId>
+    <artifactId>shred-test-onekg</artifactId>
+    <groupId>cs.ox.ac.uk.shred.test.onekg</groupId>
     <version>1.0</version>
     <modelVersion>4.0.0</modelVersion>
     <inceptionYear>2018</inceptionYear>
@@ -24,7 +24,7 @@
         <artifactId>gdb-spark-api</artifactId>
         <version>1.0</version>
         <scope>system</scope>
-        <systemPath>${basedir}/../dep/gdb-spark-api-1.0.jar</systemPath>
+	<systemPath>${basedir}/../dep/gdb-spark-api-1.0.jar</systemPath>
       </dependency>
       <dependency>
         <groupId>com.databricks</groupId>
