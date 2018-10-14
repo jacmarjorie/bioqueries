@@ -1,4 +1,4 @@
-package cs.ox.ac.uk.shred.test.1000g
+package cs.ox.ac.uk.shred.test.onekg
 
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
@@ -15,7 +15,7 @@ object Query1Broadcast{
   
   var get_skew = false
   var label = "1000g"
-  var outfile = "/home/hadoop/shredding_q1_bc.csv""
+  var outfile = "/home/hadoop/shredding_q1_bc.csv"
   var outfile2 = "/home/hadoop/shredding_q1_bc_partitions.csv"
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
@@ -25,7 +25,7 @@ object Query1Broadcast{
                                                                           .join(dict).map{case (_, (x,y)) => 
                                                                                 (x._1, x._2, y)}
 
-  def testQ1(region: Long, vs: RDD[VariantContext], clin: BroadCast[Dataset[Row]]): Unit = {
+  def testQ1(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -39,8 +39,8 @@ object Query1Broadcast{
     val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
         (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
 
-    val clin = clinical.value.rdd.map(s => (s.getString(1), s.getInt(4)))
-    val alleleCounts = genotypes.join(clin)
+    val clinical = clin.value.rdd.map(s => (s.getString(1), s.getInt(4)))
+    val alleleCounts = genotypes.join(clinical)
                         .map( x => ((x._2._1._1, x._2._1._2, x._2._2), x._2._1._3))
                         .combineByKey(
                           (genotype) => {
@@ -75,7 +75,7 @@ object Query1Broadcast{
     printer2.flush
   }
 
-  def testQ1_shred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testQ1_shred(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -98,7 +98,7 @@ object Query1Broadcast{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
 
-    val q1_dict_2 = clinical.value.rdd.map {
+    val q1_dict_2 = clin.value.rdd.map {
         c => (c.getString(1), c.getInt(4))
     }
 

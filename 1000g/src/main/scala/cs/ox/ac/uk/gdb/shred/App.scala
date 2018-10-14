@@ -1,4 +1,4 @@
-package cs.ox.ac.uk.shred.test.1000g
+package cs.ox.ac.uk.shred.test.onekg
 
 import com.oda.gdbspark._
 import org.apache.spark.rdd.RDD
@@ -19,13 +19,11 @@ object App{
     }
 
     val conf = new SparkConf()
-                .setMaster("spark://192.168.11.235:7077")
+                .setMaster("yarn-client")
                 .setAppName("GDBShred")
 
     val spark = SparkSession.builder()
                   .config(conf)
-                  .config("spark.dynamicAllocation.minExecutors", "2")
-                  .config("spark.executor.memory", "12G")
                   .getOrCreate()
 
     import spark.sqlContext.implicits._
@@ -44,6 +42,8 @@ object App{
     val clincBroadcast = spark.sparkContext.broadcast(clinic) 
     
     val query_regions = List(
+      List("PTEN"))/**,
+      List("PTEN", "TP53"),
       List("PTEN", "TP53","ACADM"),
       List("PTEN", "TP53","ACADM","NGF"),
       List("PTEN", "TP53","ACADM","NGF","NOTCH2"),
@@ -52,7 +52,7 @@ object App{
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1"),
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1", "TGFBI", "GPBP1"),
       List("PTEN", "TP53","ACADM","NGF","NOTCH2","SIRT1", "LHPP", "BRCA1", "TGFBI", "GPBP1", "ECOP", "ACTR3B")
-    )
+    )*/
     
     // group by binary variable
     val q1 = Query1
