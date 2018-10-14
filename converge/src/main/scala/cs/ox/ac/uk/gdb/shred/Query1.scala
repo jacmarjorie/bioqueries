@@ -49,14 +49,14 @@ object Query1{
                               case 0 => (2, 0) //homref
                               case 1 => (1, 1) //het
                               case 2 => (0, 2) //homvar
-                              case 3 => (0, 0) //nocall
+                              case _ => (0, 0) //nocall
                           }},
                           (acc: (Int, Int), genotype) => {
                             genotype match {
                               case 0 => (acc._1 + 2, acc._2 + 0) //homref
                               case 1 => (acc._1 + 1, acc._2 + 1) //het
                               case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-                              case 3 => (acc._1 + 0, acc._2 + 0) //nocall
+                              case _ => (acc._1 + 0, acc._2 + 0) //nocall
                           }},
                           (acc1: (Int, Int), acc2: (Int, Int)) => {
                             (acc1._1 + acc2._1, acc1._2 + acc2._2)
@@ -110,14 +110,14 @@ object Query1{
           case 0 => (2, 0) //homref
           case 1 => (1, 1) //het
           case 2 => (0, 2) //homvar
-          case 3 => (0, 0) //nocall
+          case _ => (0, 0) //nocall
       }},
       (acc: (Int, Int), genotype) => {
         genotype match {
           case 0 => (acc._1 + 2, acc._2 + 0) //homref
           case 1 => (acc._1 + 1, acc._2 + 1) //het
           case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-          case 3 => (acc._1 + 0, acc._2 + 0) //nocall
+          case _ => (acc._1 + 0, acc._2 + 0) //nocall
       }},
       (acc1: (Int, Int), acc2: (Int, Int)) => {
         (acc1._1 + acc2._1, acc1._2 + acc2._2)

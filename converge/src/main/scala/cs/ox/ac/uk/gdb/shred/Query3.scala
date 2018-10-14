@@ -64,21 +64,21 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
         (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
 
     val alleleCounts = genotypes.join(clin)
-                    .map( x => ((x._2._1._1, x._2._1._2, x._2._2), x._2._1._3))
+                    .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2._2, x._2._2._3), x._2._1._4))
                     .combineByKey(
                       (genotype) => {
                         genotype match {
                           case 0 => (1, 0, 0, 0) //homref
                           case 1 => (0, 1, 0, 0) //het
                           case 2 => (0, 0, 1, 0) //homvar
-                          case 3 => (0, 0, 0, 0) //nocall
+                          case _ => (0, 0, 0, 0) //nocall
                       }},
                       (acc: (Int, Int, Int, Int), genotype) => {
                         genotype match {
                           case 0 => (acc._1 + 1, acc._2 + 0, acc._3 + 0, acc._4 + 0) //homref
                           case 1 => (acc._1 + 0, acc._2 + 1, acc._3 + 0, acc._4 + 0) //het
                           case 2 => (acc._1 + 0, acc._2 + 0, acc._3 + 1, acc._4 + 0) //homvar
-                          case 3 => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 1) //nocall
+                          case _ => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 0) //nocall
                       }},
                       (acc1: (Int, Int, Int, Int), acc2: (Int, Int, Int, Int)) => {
                         (acc1._1 + acc2._1, acc1._2 + acc2._2, acc1._3 + acc2._3, acc1._4 + acc2._4)
@@ -130,14 +130,14 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
               case 0 => (1, 0, 0, 0) //homref
               case 1 => (0, 1, 0, 0) //het
               case 2 => (0, 0, 1, 0) //homvar
-              case 3 => (0, 0, 0, 0) //nocall
+              case _ => (0, 0, 0, 0) //nocall
           }},
           (acc: (Int, Int, Int, Int), genotype) => {
             genotype match {
               case 0 => (acc._1 + 1, acc._2 + 0, acc._3 + 0, acc._4 + 0) //homref
               case 1 => (acc._1 + 0, acc._2 + 1, acc._3 + 0, acc._4 + 0) //het
               case 2 => (acc._1 + 0, acc._2 + 0, acc._3 + 1, acc._4 + 0) //homvar
-              case 3 => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 1) //nocall
+              case 3 => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 0) //nocall
           }},
           (acc1: (Int, Int, Int, Int), acc2: (Int, Int, Int, Int)) => {
             (acc1._1 + acc2._1, acc1._2 + acc2._2, acc1._3 + acc2._3, acc1._4 + acc2._4)

@@ -59,7 +59,7 @@ object App{
     )
     
     // group by binary variable
-    val q1 = Query1
+    /**val q1 = Query1
     for(region <- query_regions){
       
       val variants = gdb.queryByGene(samples, region, false).map(x=>x._2)
@@ -107,7 +107,7 @@ object App{
         q2.testQ2_shred(c, variants, clinic)
       }
     }
-    q2.close()
+    q2.close()*/
 
     // query 3 uses xml from i2b2
     val q3 = Query3(spark, "/nfs/home/jaclyns/jflint/gdb-spark-api/crc_ILnHKHDULm.xml")
