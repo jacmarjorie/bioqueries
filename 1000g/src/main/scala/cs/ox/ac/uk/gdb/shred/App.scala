@@ -2,11 +2,8 @@ package cs.ox.ac.uk.shred.test.onekg
 
 import com.oda.gdbspark._
 import org.apache.spark.rdd.RDD
-import collection.JavaConversions._
-import collection.JavaConverters._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import htsjdk.variant.variantcontext.{Genotype, VariantContext}
 
 object App{
 
@@ -19,7 +16,7 @@ object App{
     }
 
     val conf = new SparkConf()
-                .setMaster("yarn-client")
+                .setMaster("yarn")
                 .setAppName("GDBShred")
 
     val spark = SparkSession.builder()
@@ -55,7 +52,7 @@ object App{
     )
     
     // group by binary variable
-    val q1 = Query1
+    val q1 = Query1(spark)
     for(region <- query_regions){
       
       val variants = gdb.queryByGene(samples, region, false).map(x=>x._2)
@@ -69,10 +66,10 @@ object App{
         q1.testQ1_shred(c, variants, clinic)
       }
     }
-    q1.close()
-
+    q1.writeResult()
+    
     // group by binary variable, broadcast clinical data
-    val q1bc = Query1Broadcast
+    val q1bc = Query1Broadcast(spark)
     for(region <- query_regions){
       
       val variants = gdb.queryByGene(samples, region, false).map(x=>x._2)
@@ -86,10 +83,10 @@ object App{
         q1bc.testQ1_shred(c, variants, clincBroadcast)
       }
     }
-    q1bc.close()
+    q1bc.writeResult()
 
     // group by categorical variable
-    val q2 = Query2
+    val q2 = Query2(spark)
     for(region <- query_regions){
       
       val variants = gdb.queryByGene(samples, region, false).map(x=>x._2)
@@ -103,7 +100,6 @@ object App{
         q2.testQ2_shred(c, variants, clinic)
       }
     }
-    q2.close()
-
+    q2.writeResult()
   }
 }

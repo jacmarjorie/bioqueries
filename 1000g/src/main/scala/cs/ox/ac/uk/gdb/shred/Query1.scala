@@ -3,21 +3,21 @@ package cs.ox.ac.uk.shred.test.onekg
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
 import htsjdk.variant.variantcontext.VariantContext
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.{Dataset, SparkSession, Row}
+import scala.collection.mutable.ListBuffer
 import java.io._
 
 /**
   * Query 1 joins variant and clinical data on patient identifier, then calculates allele count
   * for a binary clinical variable
   */
-object Query1{
+class Query1(spark_session: SparkSession) extends Serializable{
   
-  var get_skew = false
+  var get_skew = true
   var label = "1000g"
-  var outfile = "/mnt/shredding_q1.csv"
-  var outfile2 = "/mnt/shredding_q1_partitions.csv"
-  @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
-  @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
+
+  val result = new ListBuffer[(String, String, Long, Long)]()
+  val result2 = new ListBuffer[(String, String, Long, Int, Int)]()
 
   def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Int, (Int, Int))])]) = flat.map{ 
                                                                           case x => x._3 -> (x._1, x._2) }
@@ -28,9 +28,9 @@ object Query1{
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_initial,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p1)
+            case (i,rows) => Iterator((label,"q1_initial",region,i,rows.size))
+        }.collect.toSeq
+      result2 ++= p1
     }
     var start = System.currentTimeMillis()
 
@@ -64,14 +64,11 @@ object Query1{
 
     if (get_skew){
       val p2 = alleleCounts.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_flat,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p2)
+            case (i,rows) => Iterator((label,"q1_flat",region,i,rows.size))
+        }.collect.toSeq
+      result2 ++= p2
     }
-
-    printer.println(label+",q1_flat,"+region+","+end)
-    printer.flush
-    printer2.flush
+    result ++= Seq((label,"q1_flat",region,end))
   }
 
   def testQ1_shred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
@@ -85,9 +82,9 @@ object Query1{
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
       val p3 = v_dict.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
+            case (i,rows) => Iterator((label,"q1_shred",region,i,rows.size))
+        }.collect.toSeq
+      result2 ++= p3
     }
     
     //construct query
@@ -131,9 +128,9 @@ object Query1{
 
     if (get_skew){
       val p3 = q1_dict.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred_query,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
+            case (i,rows) => Iterator((label,"q1_shred_query",region,i,rows.size))
+        }.collect.toSeq
+      result2 ++= p3
     }
     
     //unshred
@@ -144,23 +141,23 @@ object Query1{
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3
-    println(q1.take(10).mkString(" "))
-    printer.println(label+",q1_shred,"+region+","+end1)
-    printer.println(label+",q1_shred_query,"+region+","+end2)
-    printer.println(label+",q1_unshred,"+region+","+end4)
-    printer.println(label+",q1_shred_total,"+region+","+end)
+    result ++= Seq((label,"q1_shred",region,end1))
+    result ++= Seq((label,"q1_shred_query",region,end2))
+    result ++= Seq((label,"q1_unshred",region,end4))
+    result ++= Seq((label,"q1_shred_total",region,end))
     if (get_skew){
       val p4 = q1.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_unshred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p4)
+            case (i,rows) => Iterator((label,"q1_unshred",region,i,rows.size))
+        }.collect.toSeq
+      result2 ++= p4
     }
-    printer.flush
-    printer2.flush
   }
 
-  def close(): Unit = {
-    printer.close()
-    printer2.close()
+  def writeResult(): Unit = {
+    Utils.writeResult(spark_session, result.toList, result2.toList, "q1", get_skew)
   }
+}
+
+object Query1{
+  def apply(spark_session: SparkSession) = new Query1(spark_session)
 }
