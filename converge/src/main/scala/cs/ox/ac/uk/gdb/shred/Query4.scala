@@ -8,8 +8,7 @@ import java.io._
 
 /**
   * Query 4 joins variant and clinical data on patient identifier, then calculates allele count
-  * for a binary clinical variable, uses that to determine the odds ratio. Odds ratio is kept if 
-  * the value is not equal to 1.  
+  * for a binary clinical variable, uses that to determine the odds ratio.  
 */
 object Query4{
   
@@ -20,12 +19,15 @@ object Query4{
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, Double)]) = flat.map{ 
-                                                                          case x => x._3 -> (x._1, x._2) }
-                                                                          .join(dict).map{case (_, (x,y)) => 
-                                                                                (x._1, x._2, y)}
+  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, Double)]): RDD[(String, Int, Double)] = {
+    flat.map{ 
+      case (contig, start, id) => id -> (contig, start) 
+    }.join(dict).map{
+        case (_, ((contig, start), oddsratio )) => (contig, start, oddsratio)
+    }
+  }
 
-  def testQ4(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -34,16 +36,21 @@ object Query4{
       printer2.println(p1)
     }
     var start = System.currentTimeMillis()
+
     //flatten
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
+    val genotypes = rdd.map{
+                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                        (sample, (variant.getContig, variant.getStart, id, 
+                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
+                    }.flatMap(g => g)
 
     val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
  
-    //query on flatten
-    val oddsratio = genotypes.join(clinJoin)
-                        .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2), x._2._1._4))
+    val oddsratio = genotypes.join(clinJoin).map{
+                          case (sample, ((contig, start, vid, genotype), iscase)) => 
+                                                  ((contig, start, vid, iscase), genotype)
+                        }
                         .combineByKey(
                           (genotype) => {
                             genotype match {
@@ -61,16 +68,18 @@ object Query4{
                           }},
                           (acc1: (Int, Int), acc2: (Int, Int)) => {
                             (acc1._1 + acc2._1, acc1._2 + acc2._2)
-                          }).map(x => 
-                        (x._1, (x._2._1.toDouble/x._2._2.toDouble)))
-                    .groupBy(x => (x._1._1, x._1._2)).map(x => {
-                        val v = x._2.toList
-                        if(v(0)._1._3 == 1.0){
-                           (x._1, v(0)._2/v(1)._2)
-                        }else{
-                           (x._1, v(1)._2/v(0)._2)
-                        }  
-                    }).filter(x => x._2 != 1.00)//.join(snps)
+                          }).map{
+                            case (id, (alt, ref)) =>
+                                  (id, (alt.toDouble/ref))
+                          }.groupBy{
+                            case ((contig, start, _, _), _) => (contig, start)
+                          }.map{
+                            case (id, ratios) => ratios.toList match {
+                              case List(((_,_,_,1.0), cse), ((_,_,_,0.0), cntrl)) => (id, cse/cntrl)
+                              case List(((_,_,_,0.0), cse), ((_,_,_,1.0), cntrl)) => (id, cse/cntrl)
+                              case _ => (id, 0.0)
+                            }
+                          }
     oddsratio.count
     var end = System.currentTimeMillis() - start
 
@@ -87,7 +96,7 @@ object Query4{
     printer2.flush
   }
 
-  def testQ4_shred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -132,14 +141,16 @@ object Query4{
       }},
       (acc1: (Int, Int), acc2: (Int, Int)) => {
         (acc1._1 + acc2._1, acc1._2 + acc2._2)
-      }).groupBy(x => x._1._1).map(x => {
-        val d = x._2.toList
-        if (d(0)._1._2 == 1.0){
-          (x._1, (d(0)._2._1.toDouble/d(0)._2._2.toDouble)/(d(1)._2._1.toDouble/d(1)._2._2.toDouble))
-      }else{
-        (x._1, (d(1)._2._1.toDouble/d(1)._2._2.toDouble)/(d(0)._2._1.toDouble/d(0)._2._2.toDouble))
+      }).groupBy{
+        case ((id, iscase), _) => id
+      }.map{
+        case (id, ratios) => ratios.toList match {
+          case List(((_, 1.0), (cseAlt,cseRef)), ((_, 0.0), (cntrlAlt, cntrlRef))) => 
+                                (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
+          case List(((_, 0.0), (cseAlt,cseRef)), ((_, 1.0), (cntrlAlt, cntrlRef))) => 
+                                (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
       }
-    }).filter(x => x._2 != 1.00)
+    }
     q1_dict.count
     var end2 = System.currentTimeMillis() - start2
 

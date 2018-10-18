@@ -22,4 +22,12 @@ object Utils extends Serializable{
       val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
       (flat,dict)
     }
+
+    def shred2(rdd: RDD[VariantContext]) = {
+      val lbl = rdd.zipWithUniqueId
+      val flat = lbl.map( i => i match { case (x,l) => ((x.getContig, x.getStart), l) })
+      val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
+      (flat,dict)
+    }
+
 }

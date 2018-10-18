@@ -8,7 +8,7 @@ import java.io._
 
 /**
   * Query 1 joins variant and clinical data on patient identifier, then calculates allele count
-  * for a binary clinical variable
+  * for a binary clinical variable (has MDD diagnosis or not)
   */
 object Query1{
   
@@ -24,7 +24,7 @@ object Query1{
                                                                           .join(dict).map{case (_, (x,y)) => 
                                                                                 (x._1, x._2, y)}
 
-  def testQ1(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -32,8 +32,9 @@ object Query1{
         }.map(r => label+",q1_initial,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
       printer2.println(p1)
     }
+
     var start = System.currentTimeMillis()
-    //flatten
+    //flatten, handle duplicate variant data
     val rdd = vs.zipWithUniqueId
     val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
         (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
@@ -77,7 +78,7 @@ object Query1{
     printer2.flush
   }
 
-  def testQ1_shred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -85,6 +86,7 @@ object Query1{
     v_dict.count
     v_flat.cache
     v_flat.count
+    vs.unpersist()
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
       val p3 = v_dict.mapPartitionsWithIndex{
@@ -127,7 +129,7 @@ object Query1{
         it.toList.groupBy(_._1)
         .mapValues(_.map(_._2)).iterator
     }, true)
-    q1_dict.cache
+    //q1_dict.cache
     q1_dict.count
     var end2 = System.currentTimeMillis() - start2
 
@@ -141,7 +143,7 @@ object Query1{
     //unshred
     var start3 = System.currentTimeMillis()
     val q1 = unshred(q1_flat, q1_dict)
-    q1.cache
+    //q1.cache
     q1.count
     var end3 = System.currentTimeMillis()
     var end = end3 - start
@@ -158,6 +160,10 @@ object Query1{
     }
     printer.flush
     printer2.flush
+    //v_dict.unpersist()
+    //v_flat.unpersist()
+    //q1_dict.unpersist()
+    //q1.unpersist()
   }
 
   def close(): Unit = {
