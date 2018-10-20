@@ -24,8 +24,11 @@ object App{
       case e: Exception => println(e)
     }
 
+    val argsList = args.toList
+    val queries = argsList.tail
+    val repartition = 4
     val conf = new SparkConf()
-                .setMaster("spark://192.168.11.235:7077")
+                .setMaster(argsList(0))
                 .setAppName("GDBShred")
 
     val spark = SparkSession.builder()
@@ -53,22 +56,22 @@ object App{
     val clincBroadcast = spark.sparkContext.broadcast(jdbcDF.where("iscase is not null")) 
     
     val query_regions = List(
-      List(("10", 1, 200000)), //734
-      List(("10", 1, 500000)), //3667
+      List(("10", 1, 200000))//, //734
+      /**List(("10", 1, 500000)), //3667
       List(("10", 1, 800000)), //7387
       List(("10", 1, 1000000)), //9031
       List(("10", 1, 1200000)), //11004
       List(("10", 1, 1500000)), //14143
       List(("10", 1, 2000000)), //19927
-      List(("10", 1, 5000000)) //50895
+      List(("10", 1, 5000000)) //50895*/
     )
    
-    if(args contains "1"){
+    if(queries contains "1"){
       // group by binary variable
       val q1 = Query1
       for(region <- query_regions){
       
-        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(4)
+        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
         variants.cache
         val c = variants.count
       
@@ -82,69 +85,68 @@ object App{
       q1.close()
     }
 
-    if(args contains "1bc"){
+    if(queries contains "1bc"){
       // group by binary variable, broadcast clinical data
       val q1bc = Query1Broadcast
       for(region <- query_regions){
       
-        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(4)
+        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
         variants.cache
         val c = variants.count
   
         for(i <- 1 to 1){
-          q1bc.testQ1(c, variants, clincBroadcast)
+          q1bc.testFlat(c, variants, clincBroadcast)
         }
         for(i <- 1 to 1){
-          q1bc.testQ1_shred(c, variants, clincBroadcast)
+          q1bc.testShred(c, variants, clincBroadcast)
         }
       }
       q1bc.close()
     }
 
-    if(args contains "2"){
+    if(queries contains "2"){
       // group by categorical variable
       val q2 = Query2
       for(region <- query_regions){
       
-        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(4)
-
+        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
         variants.cache
         val c = variants.count
   
         for(i <- 1 to 1){
-          q2.testQ2(c, variants, clinic)
+          q2.testFlat(c, variants, clinic)
         }
         for(i <- 1 to 1){
-          q2.testQ2_shred(c, variants, clinic)
+          q2.testShred(c, variants, clinic)
         }
       }
       q2.close()
     }
 
-    if(args contains "3"){
+    if(queries contains "3"){
       // query 3 uses xml from i2b2
       val q3 = Query3(spark, "/nfs/home/jaclyns/jflint/gdb-spark-api/crc_ILnHKHDULm.xml")
       for(region <- query_regions){
       
-        val variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(4)
+        val variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
         variants.cache
         val c = variants.count
   
         for(i <- 1 to 1){
-          q3.testQ3(c, variants)
+          q3.testFlat(c, variants)
         }
         for(i <- 1 to 1){
-          q3.testQ3_shred(c, variants)
+          q3.testShred(c, variants)
         }
       }
       q3.close()
     }
 
-    if(args contains "4"){
+    if(queries contains "4"){
       val q4 = Query4
       for(region <- query_regions){
       
-        var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(4)
+        var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
         variants.cache
         val c = variants.count
       

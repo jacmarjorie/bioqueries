@@ -19,10 +19,13 @@ object Query1{
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int))])]) = flat.map{ 
-                                                                          case x => x._3 -> (x._1, x._2) }
-                                                                          .join(dict).map{case (_, (x,y)) => 
-                                                                                (x._1, x._2, y)}
+  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int))])]) = {
+    flat.map{ 
+      case (contig, start, id) => id -> (contig, start) 
+    }.join(dict).map{
+      case (_, ((contig, start),alleleCounts)) => (contig, start, alleleCounts)
+    }
+  }
 
   def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     
@@ -36,14 +39,19 @@ object Query1{
     var start = System.currentTimeMillis()
     //flatten, handle duplicate variant data
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s => 
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
+    val genotypes = rdd.map{
+                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                        (sample, (variant.getContig, variant.getStart, id,
+                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
+                    }.flatMap(g => g)
 
     val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
  
     //query on flatten
-    val alleleCounts = genotypes.join(clinJoin)
-                        .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2), x._2._1._4))
+    val alleleCounts = genotypes.join(clinJoin).map{
+                          case (sample, ((contig, start, vid, genotype), iscase)) =>
+                                                  ((contig, start, vid, iscase), genotype)
+                        }
                         .combineByKey(
                           (genotype) => {
                             genotype match {
@@ -160,10 +168,6 @@ object Query1{
     }
     printer.flush
     printer2.flush
-    //v_dict.unpersist()
-    //v_flat.unpersist()
-    //q1_dict.unpersist()
-    //q1.unpersist()
   }
 
   def close(): Unit = {

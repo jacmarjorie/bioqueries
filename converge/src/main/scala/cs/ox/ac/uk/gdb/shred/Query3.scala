@@ -40,16 +40,21 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
                         
   val observations = i2b2.observationTable.rdd.map(r => (r.getString(2), r.getString(1)))
   val patients = gdbmapI2b2.query("callset").rdd.map( r => (r.getString(2), r.getString(1)))
-  val clin = observations.join(concepts).map( x => 
-              (x._2._1, (x._1, x._2._1, x._2._2._1, x._2._2._2))).join(patients).map(x => 
-                (x._2._2, (x._2._1._1, x._2._1._3, x._2._1._4)))
+  val clin = observations.join(concepts).map{
+    case (concept, (patient, (clin, value, grp))) => (patient, (concept, clin, value, grp))
+  }.join(patients).map{
+    case (patient, ((concept, clin, value, group), sample)) => (sample, (concept, value, group))
+  }
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(String, String, (Int, Int, Int, Int))])]) = flat.map{ 
-                                                                          case x => x._3 -> (x._1, x._2) }
-                                                                          .join(dict).map{case (_, (x,y)) => 
-                                                                                (x._1, x._2, y)}
+  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(String, String, (Int, Int, Int, Int))])]) = {
+    flat.map{ 
+      case (contig, start, id) => id -> (contig, start) 
+    }.join(dict).map{
+      case (_, ((contig, start), genotypeDist)) => (contig, start, genotypeDist)
+    }
+  }
 
-  def testQ3(region: Long, vs: RDD[VariantContext]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -60,32 +65,36 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
     var start = System.currentTimeMillis()
     //flatten
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s =>
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
+    val genotypes = rdd.map{
+                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                        (sample, (variant.getContig, variant.getStart, id,
+                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
+                    }.flatMap(g => g)
 
-    val alleleCounts = genotypes.join(clin)
-                    .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2._2, x._2._2._3), x._2._1._4))
-                    .combineByKey(
-                      (genotype) => {
-                        genotype match {
-                          case 0 => (1, 0, 0, 0) //homref
-                          case 1 => (0, 1, 0, 0) //het
-                          case 2 => (0, 0, 1, 0) //homvar
-                          case _ => (0, 0, 0, 0) //nocall
-                      }},
-                      (acc: (Int, Int, Int, Int), genotype) => {
-                        genotype match {
-                          case 0 => (acc._1 + 1, acc._2 + 0, acc._3 + 0, acc._4 + 0) //homref
-                          case 1 => (acc._1 + 0, acc._2 + 1, acc._3 + 0, acc._4 + 0) //het
-                          case 2 => (acc._1 + 0, acc._2 + 0, acc._3 + 1, acc._4 + 0) //homvar
-                          case _ => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 0) //nocall
-                      }},
-                      (acc1: (Int, Int, Int, Int), acc2: (Int, Int, Int, Int)) => {
-                        (acc1._1 + acc2._1, acc1._2 + acc2._2, acc1._3 + acc2._3, acc1._4 + acc2._4)
-                      })
+    val alleleCounts = genotypes.join(clin).map{
+                        case (sample, ((contig, start, id, genotype), (concept, value, grp))) => 
+                                                        ((contig, start, id, value, grp), genotype)
+                       }
+                      .combineByKey(
+                        (genotype) => {
+                          genotype match {
+                            case 0 => (1, 0, 0, 0) //homref
+                            case 1 => (0, 1, 0, 0) //het
+                            case 2 => (0, 0, 1, 0) //homvar
+                            case _ => (0, 0, 0, 0) //nocall
+                        }},
+                        (acc: (Int, Int, Int, Int), genotype) => {
+                          genotype match {
+                            case 0 => (acc._1 + 1, acc._2 + 0, acc._3 + 0, acc._4 + 0) //homref
+                            case 1 => (acc._1 + 0, acc._2 + 1, acc._3 + 0, acc._4 + 0) //het
+                            case 2 => (acc._1 + 0, acc._2 + 0, acc._3 + 1, acc._4 + 0) //homvar
+                            case _ => (acc._1 + 0, acc._2 + 0, acc._3 + 0, acc._4 + 0) //nocall
+                        }},
+                        (acc1: (Int, Int, Int, Int), acc2: (Int, Int, Int, Int)) => {
+                          (acc1._1 + acc2._1, acc1._2 + acc2._2, acc1._3 + acc2._3, acc1._4 + acc2._4)
+                        })
     alleleCounts.count
     var end = System.currentTimeMillis() - start
-    println(alleleCounts.take(2).mkString(" "))
 
     if (get_skew){
       val p2 = alleleCounts.mapPartitionsWithIndex{
@@ -99,7 +108,7 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
     printer2.flush
   }
 
-  def testQ3_shred(region: Long, vs: RDD[VariantContext]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -123,7 +132,7 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
     }
     
     val q3_dict = q3_dict_1.join(clin).map{
-        case (_, ((l, gt_call), z)) => (l, z._2, z._3) -> gt_call
+        case (_, ((l, gt_call), (concept, value, group))) => (l, value, group) -> gt_call
     }.combineByKey(
           (genotype) => {
             genotype match {
@@ -166,7 +175,6 @@ class Query3(spark_session: SparkSession, crcxml: String) extends Serializable{
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3
-    println(q3.take(10).mkString(" "))
     printer.println(label+",q3_shred,"+region+","+end1)
     printer.println(label+",q3_shred_query,"+region+","+end2)
     printer.println(label+",q3_unshred,"+region+","+end4)

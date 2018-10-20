@@ -20,12 +20,15 @@ object Query2{
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int, Int, Int))])]) = flat.map{ 
-                                                                          case x => x._3 -> (x._1, x._2) }
-                                                                          .join(dict).map{case (_, (x,y)) => 
-                                                                                (x._1, x._2, y)}
+  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int, Int, Int))])]) = {
+    flat.map{ 
+      case (contig, start, id) => id -> (contig, start)
+    }.join(dict).map{
+      case (_, ((contig, start),genotypeCnts)) => (contig, start, genotypeCnts)
+    }
+  }
 
-  def testQ2(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -36,15 +39,22 @@ object Query2{
     var start = System.currentTimeMillis()
     //flatten
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s =>
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)    
-    val clinical = clin.select("id", "cold_m").where("cold_m is not null").rdd.map(s => 
-                    (s.getString(0), s.getDouble(1)))
+    val genotypes = rdd.map{
+                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                        (sample, (variant.getContig, variant.getStart, id,
+                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
+                    }.flatMap(g => g)
+
+    val clinical = clin.select("id", "cold_m").where("cold_m is not null").rdd.map{ row => 
+                    (row.getString(0), row.getDouble(1))
+                  }
   
     //query on flatten
-    val alleleCounts = genotypes.join(clinical)
-                    .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2), x._2._1._4))
-                    .combineByKey(
+    val alleleCounts = genotypes.join(clinical).map{
+                          case (sample, ((contig, start, vid, genotype), iscase)) =>
+                                                  ((contig, start, vid, iscase), genotype)
+                      }
+                      .combineByKey(
                       (genotype) => {
                         genotype match {
                           case 0 => (1, 0, 0, 0) //homref
@@ -64,7 +74,6 @@ object Query2{
                       })
     alleleCounts.count
     var end = System.currentTimeMillis() - start
-    println(alleleCounts.take(2).mkString(" "))
 
     if (get_skew){
       val p2 = alleleCounts.mapPartitionsWithIndex{
@@ -78,7 +87,7 @@ object Query2{
     printer2.flush
   }
 
-  def testQ2_shred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -101,7 +110,9 @@ object Query2{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
     
-    val clinical = clin.select("id", "cold_m").where("cold_m is not null").rdd.map(s => (s.getString(0), s.getDouble(1)))
+    val clinical = clin.select("id", "cold_m").where("cold_m is not null").rdd.map{
+                      row => (row.getString(0), row.getDouble(1))
+                    }
 
     val q2_dict = q2_dict_1.join(clinical).map{
         case (_, ((l, gt_call), coldm)) => (l, coldm) -> gt_call
@@ -147,7 +158,6 @@ object Query2{
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3
-    println(q2.take(10).mkString(" "))
     printer.println(label+",q2_shred,"+region+","+end1)
     printer.println(label+",q2_shred_query,"+region+","+end2)
     printer.println(label+",q2_unshred,"+region+","+end4)

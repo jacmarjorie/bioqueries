@@ -20,12 +20,15 @@ object Query1Broadcast{
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int))])]) = flat.map{ 
-                                                                          case x => x._3 -> (x._1, x._2) }
-                                                                          .join(dict).map{case (_, (x,y)) => 
-                                                                                (x._1, x._2, y)}
+  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, List[(Double, (Int, Int))])]) = {
+    flat.map{
+      case (contig, start, id) => id -> (contig, start)
+    }.join(dict).map{
+      case (_, ((contig, start),alleleCnts)) => (contig, start, alleleCnts)
+    }
+  }
 
-  def testQ1(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -36,12 +39,17 @@ object Query1Broadcast{
     var start = System.currentTimeMillis()
     //flatten
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map( v => v._1.getSampleNames.toList.map(s =>
-        (s, (v._1.getContig, v._1.getStart, v._2, Utils.reportGenotypeType(v._1.getGenotype(s)))))).flatMap(x => x)
+    val genotypes = rdd.map{
+                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                        (sample, (variant.getContig, variant.getStart, id,
+                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
+                    }.flatMap(g => g)
     
     //query on flatten
-    val alleleCounts = genotypes.join(clin.value.rdd.map(s => (s.getString(2), s.getDouble(6))))
-                        .map( x => ((x._2._1._1, x._2._1._2, x._2._1._3, x._2._2), x._2._1._4))
+    val alleleCounts = genotypes.join(clin.value.rdd.map{ case row => (row.getString(2), row.getDouble(6))}).map{
+                          case (sample, ((contig, start, vid, genotype), iscase)) =>
+                                                  ((contig, start, vid, iscase), genotype)
+                        }
                         .combineByKey(
                           (genotype) => {
                             genotype match {
@@ -62,7 +70,6 @@ object Query1Broadcast{
                           })
     alleleCounts.count
     var end = System.currentTimeMillis() - start
-    println(alleleCounts.take(2).mkString(" "))
 
     if (get_skew){
       val p2 = alleleCounts.mapPartitionsWithIndex{
@@ -76,7 +83,7 @@ object Query1Broadcast{
     printer2.flush
   }
 
-  def testQ1_shred(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Broadcast[Dataset[Row]]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred(vs)
@@ -99,10 +106,7 @@ object Query1Broadcast{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
    
-    val q1_dict_2 = clin.value.rdd.map {
-        c => (c.getString(2), c.getDouble(6))
-    } 
-    val q1_dict = q1_dict_1.join(q1_dict_2).map{
+    val q1_dict = q1_dict_1.join(clin.value.rdd.map{ row => (row.getString(2), row.getDouble(6))}).map{
         case (_, ((l, gt_call), clinAttr)) => (l, clinAttr) -> gt_call
     }.combineByKey(
       (genotype) => {
@@ -146,7 +150,6 @@ object Query1Broadcast{
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3
-    println(q1.take(10).mkString(" "))
     printer.println(label+",q1_shred,"+region+","+end1)
     printer.println(label+",q1_shred_query,"+region+","+end2)
     printer.println(label+",q1_unshred,"+region+","+end4)
