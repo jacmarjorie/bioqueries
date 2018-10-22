@@ -4,30 +4,33 @@ import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
 import htsjdk.variant.variantcontext.VariantContext
 import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.SparkSession
 import java.io._
 
 /**
-  * Query 4 joins variant and clinical data on patient identifier, then calculates allele count
-  * for a binary clinical variable, uses that to determine the odds ratio.  
+  * Query 5 joins variant and clinical data on patient identifier, then calculates allele count
+  * for a binary clinical variable, uses that to determine the odds ratio. 
+  * Data is then mapped to a public variant idenfitier (dbSNP rs id), and joined with functional
+  * annotations from Ensembl's VEP (Variant Effect Predictor) REST api (json format). 
 */
-object Query4{
+object Query5{
   
   var get_skew = false
   var label = "converge"
-  var outfile = "/mnt/app_hdd/scratch/flint-spark/shredding_q4.csv"
-  var outfile2 = "/mnt/app_hdd/scratch/flint-spark/shredding_q4_partitions.csv"
+  var outfile = "/mnt/app_hdd/scratch/flint-spark/shredding_q5.csv"
+  var outfile2 = "/mnt/app_hdd/scratch/flint-spark/shredding_q5_partitions.csv"
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[(String, Int, Long)], dict: RDD[(Long, Double)]): RDD[(String, Int, Double)] = {
+  def unshred(flat: RDD[((String, Int), Long)], dict: RDD[(Long, (Double, Int))]): RDD[(String, Int, Int, Double)] = {
     flat.map{ 
-      case (contig, start, id) => id -> (contig, start) 
+      case ((contig, start), id) => id -> (contig, start) 
     }.join(dict).map{
-        case (_, ((contig, start), oddsratio )) => (contig, start, oddsratio)
+        case (_, ((contig, start), (oddsratio, snpid))) => (contig, start, snpid, oddsratio)
     }
   }
 
-  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
     
     if (get_skew){
       val p1 = vs.mapPartitionsWithIndex{
@@ -46,7 +49,8 @@ object Query4{
                     }.flatMap(g => g)
 
     val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
- 
+
+
     val oddsratio = genotypes.join(clinJoin).map{
                           case (sample, ((contig, start, vid, genotype), iscase)) => 
                                                   ((contig, start, vid, iscase), genotype)
@@ -79,8 +83,18 @@ object Query4{
                               case List(((_,_,_,0.0), cse), ((_,_,_,1.0), cntrl)) => (id, cse/cntrl)
                               case _ => (id, 0.0)
                             }
-                          }
-    oddsratio.count
+                          }.map{
+                            case ((contig, start, id), odds) => (contig, start) -> (id, odds) 
+                          }.join(snps).map{
+                            case ((contig, start), ((vid, odds), dbsnp)) => dbsnp -> (contig, start, vid, odds)
+                          }.join(annots).map{
+                            case (dbsnp, ((contig, start, vid, odds), annot)) => {
+                              // This is going to work with nested attributes from the annotatoin API
+                              (dbsnp, contig, start, vid, odds, annot.getAs[String]("most_severe_consequence"))
+                            }
+                          }.sortBy(_._5)
+
+    oddsratio.take(100).foreach(println)
     var end = System.currentTimeMillis() - start
 
 
@@ -96,16 +110,16 @@ object Query4{
     printer2.flush
   }
 
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
     //shred
     var start = System.currentTimeMillis()
-    val (v_flat, v_dict) = Utils.shred(vs)
-    //v_dict.cache
-    //v_dict.count
-    //v_flat.cache
-    //v_flat.count
-    //vs.unpersist()
-    //var end1 = System.currentTimeMillis() - start
+    val (v_flat, v_dict) = Utils.shred2(vs)
+    v_dict.cache
+    v_dict.count
+    v_flat.cache
+    v_flat.count
+    vs.unpersist()
+    var end1 = System.currentTimeMillis() - start
     if (get_skew){
       val p3 = v_dict.mapPartitionsWithIndex{
             case (i,rows) => Iterator((i,rows.size))
@@ -114,10 +128,15 @@ object Query4{
     }
     
     //construct query
-    //var start2 = System.currentTimeMillis()
+    var start2 = System.currentTimeMillis()
     val q1_flat = v_flat
+    
     val q1_dict_1 = v_dict.flatMap{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
+    }
+    
+    val snpJoin = v_flat.join(snps).map{
+      case ((contig, start), (vid, snpid)) => vid -> snpid
     }
 
     val q1_dict_2 = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
@@ -150,9 +169,9 @@ object Query4{
           case List(((_, 0.0), (cseAlt,cseRef)), ((_, 1.0), (cntrlAlt, cntrlRef))) => 
                                 (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
       }
-    }
-    //q1_dict.count
-    //var end2 = System.currentTimeMillis() - start2
+    }.join(snpJoin)
+    q1_dict.count
+    var end2 = System.currentTimeMillis() - start2
 
     if (get_skew){
       val p3 = q1_dict.mapPartitionsWithIndex{
@@ -162,17 +181,16 @@ object Query4{
     }
     
     //unshred
-    //var start3 = System.currentTimeMillis()
+    var start3 = System.currentTimeMillis()
     val q1 = unshred(q1_flat, q1_dict)
     //q1.cache
     q1.count
-    //var end3 = System.currentTimeMillis()
-    //var end = end3 - start
-    //var end4 = end3 - start3
-    var end = System.currentTimeMillis() - start
-    //printer.println(label+",q1_shred,"+region+","+end1)
-    //printer.println(label+",q1_shred_query,"+region+","+end2)
-    //printer.println(label+",q1_unshred,"+region+","+end4)
+    var end3 = System.currentTimeMillis()
+    var end = end3 - start
+    var end4 = end3 - start3
+    printer.println(label+",q1_shred,"+region+","+end1)
+    printer.println(label+",q1_shred_query,"+region+","+end2)
+    printer.println(label+",q1_unshred,"+region+","+end4)
     printer.println(label+",q1_shred_total,"+region+","+end)
     if (get_skew){
       val p4 = q1.mapPartitionsWithIndex{
@@ -189,3 +207,4 @@ object Query4{
     printer2.close()
   }
 }
+

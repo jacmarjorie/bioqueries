@@ -26,7 +26,7 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val repartition = 4
+    val repartition = 8
     val conf = new SparkConf()
                 .setMaster(argsList(0))
                 .setAppName("GDBShred")
@@ -54,10 +54,11 @@ object App{
     val clinic = jdbcDF.where("iscase is not null")
     
     val clincBroadcast = spark.sparkContext.broadcast(jdbcDF.where("iscase is not null")) 
-    
+    val annotations = AnnotationHelper(spark, "https://rest.ensembl.org", "/vep/human/id")   
+ 
     val query_regions = List(
-      List(("10", 1, 200000))//, //734
-      /**List(("10", 1, 500000)), //3667
+      List(("10", 1, 200000))/**, //734
+      List(("10", 1, 500000)), //3667
       List(("10", 1, 800000)), //7387
       List(("10", 1, 1000000)), //9031
       List(("10", 1, 1200000)), //11004
@@ -149,21 +150,42 @@ object App{
         var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
         variants.cache
         val c = variants.count
-      
-        // map to dbsnp id
-        //val s = "(SELECT * FROM snpchrposonref WHERE (chr, pos) IN ("+variants.map(r => 
-         //   ("'"+r.getContig+"'", "'"+Integer.toString(r.getStart.asInstanceOf[Int]-1)+"'")).collect.toList.distinct.mkString(",")+")) AS snptable"
-        //val snps = gdbmap.query(s).rdd.map(r => (r.getString(1), r.getInt(2)+1) -> r.getInt(0))
-        val snps: RDD[((String, Int), Int)] = spark.sparkContext.emptyRDD
 
         for(i <- 1 to 1){
-          q4.testFlat(c, variants, clinic, snps)
+          q4.testFlat(c, variants, clinic)
         }
         for(i <- 1 to 1){
-          q4.testShred(c, variants, clinic, snps)
+          q4.testShred(c, variants, clinic)
         }
       } 
       q4.close()
     }
+
+    if(queries contains "5"){
+      val q5 = Query5
+      for(region <- query_regions){
+      
+        var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
+        variants.cache
+        val c = variants.count
+      
+        // map to dbsnp id
+        val s = "(SELECT * FROM snpchrposonref WHERE (chr, pos) IN ("+variants.map(r => 
+           ("'"+r.getContig+"'", "'"+Integer.toString(r.getStart.asInstanceOf[Int]-1)+"'")).collect.toList.distinct.mkString(",")+")) AS snptable"
+        val snps = gdbmap.query(s).rdd.map{
+                    case row => (row.getString(1), row.getInt(2)+1) -> row.getInt(0)
+                  }
+        val annots = annotations.makeRequest(snps)
+
+        for(i <- 1 to 1){
+          q5.testFlat(c, variants, clinic, snps, annots)
+        }
+        /**for(i <- 1 to 1){
+          q5.testShred(c, variants, clinic, snps)
+        }*/
+      } 
+      q5.close()
+    }
+
   }
 }
