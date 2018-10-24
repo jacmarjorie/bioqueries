@@ -22,11 +22,11 @@ object Query5{
   @transient val printer = new PrintWriter(new FileOutputStream(new File(outfile), true /* append = true */))
   @transient val printer2 = new PrintWriter(new FileOutputStream(new File(outfile2), true /* append = true */))
 
-  def unshred(flat: RDD[((String, Int), Long)], dict: RDD[(Long, (Double, Int))]): RDD[(String, Int, Int, Double)] = {
+  def unshred(flat: RDD[((String, Int), Long)], dict: RDD[(Long, (Double, String))]): RDD[(String, Int, String, Double)] = {
     flat.map{ 
       case ((contig, start), id) => id -> (contig, start) 
     }.join(dict).map{
-        case (_, ((contig, start), (oddsratio, snpid))) => (contig, start, snpid, oddsratio)
+        case (_, ((contig, start), (oddsratio, annot))) => (contig, start, annot, oddsratio)
     }
   }
 
@@ -93,9 +93,9 @@ object Query5{
                               (dbsnp, contig, start, vid, odds, annot.getAs[String]("most_severe_consequence"))
                             }
                           }.sortBy(_._5)
-
-    oddsratio.take(100).foreach(println)
+    oddsratio.count
     var end = System.currentTimeMillis() - start
+    oddsratio.take(100).foreach(println)
 
 
     if (get_skew){
@@ -110,7 +110,7 @@ object Query5{
     printer2.flush
   }
 
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred2(vs)
@@ -136,7 +136,9 @@ object Query5{
     }
     
     val snpJoin = v_flat.join(snps).map{
-      case ((contig, start), (vid, snpid)) => vid -> snpid
+      case ((contig, start), (vid, snpid)) => snpid -> vid
+    }.join(annots).map{
+      case (dbsnp, (vid, annot)) => vid -> annot
     }
 
     val q1_dict_2 = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
@@ -169,7 +171,11 @@ object Query5{
           case List(((_, 0.0), (cseAlt,cseRef)), ((_, 1.0), (cntrlAlt, cntrlRef))) => 
                                 (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
       }
-    }.join(snpJoin)
+    }.sortBy(_._2).join(snpJoin).map{
+        case (vid, (odds, annot)) =>
+            vid -> (odds, annot.getAs[String]("most_severe_consequence"))
+    }
+
     q1_dict.count
     var end2 = System.currentTimeMillis() - start2
 
@@ -188,6 +194,7 @@ object Query5{
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3
+    q1.take(100).foreach(println)
     printer.println(label+",q1_shred,"+region+","+end1)
     printer.println(label+",q1_shred_query,"+region+","+end2)
     printer.println(label+",q1_unshred,"+region+","+end4)

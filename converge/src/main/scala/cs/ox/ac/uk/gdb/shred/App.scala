@@ -57,14 +57,14 @@ object App{
     val annotations = AnnotationHelper(spark, "https://rest.ensembl.org", "/vep/human/id")   
  
     val query_regions = List(
-      List(("10", 1, 200000))/**, //734
+      List(("10", 1, 200000)), //734
       List(("10", 1, 500000)), //3667
       List(("10", 1, 800000)), //7387
       List(("10", 1, 1000000)), //9031
       List(("10", 1, 1200000)), //11004
       List(("10", 1, 1500000)), //14143
       List(("10", 1, 2000000)), //19927
-      List(("10", 1, 5000000)) //50895*/
+      List(("10", 1, 5000000)) //50895
     )
    
     if(queries contains "1"){
@@ -180,9 +180,9 @@ object App{
         for(i <- 1 to 1){
           q5.testFlat(c, variants, clinic, snps, annots)
         }
-        /**for(i <- 1 to 1){
-          q5.testShred(c, variants, clinic, snps)
-        }*/
+        for(i <- 1 to 1){
+          q5.testShred(c, variants, clinic, snps, annots)
+        }
       } 
       q5.close()
     }
