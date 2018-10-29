@@ -16,6 +16,8 @@ object Utils extends Serializable{
       }
     }
 
+    // trying out different shreds
+
     def shred(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
       val flat = lbl.map( i => i match { case (x,l) => (x.getContig, x.getStart, l) })
@@ -27,6 +29,16 @@ object Utils extends Serializable{
       val lbl = rdd.zipWithUniqueId
       val flat = lbl.map( i => i match { case (x,l) => ((x.getContig, x.getStart), l) })
       val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
+      (flat,dict)
+    }
+
+    def shred3(rdd: RDD[VariantContext]) = {
+      val lbl = rdd.zipWithUniqueId
+      val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
+      val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
+                      case genotype => (genotype.getSampleName, (reportGenotypeType(genotype), vpk))
+                    }
+                 }
       (flat,dict)
     }
 
