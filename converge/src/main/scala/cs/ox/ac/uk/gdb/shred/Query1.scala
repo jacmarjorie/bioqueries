@@ -89,7 +89,7 @@ object Query1{
   def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     //shred
     var start = System.currentTimeMillis()
-    val (v_flat, g_flat) = Utils.shred3(vs)
+    val (v_flat, g_flat) = Utils.shred4(vs)
     val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
     v_flat.count
     g_flat.count
@@ -104,8 +104,12 @@ object Query1{
     
     //construct query
     var start2 = System.currentTimeMillis()
-    
-    val q1_dict = g_flat.join(c_flat).map{
+      
+    val g_reorg = g_flat.map{
+                    case (vid, (name, geno)) => (name, (geno, vid))
+                  }
+  
+    val q1_dict = g_reorg.join(c_flat).map{
                     case (sample, ((genotype, vid), iscase)) => (vid, iscase) -> genotype
     }.combineByKey(
       (genotype) => {

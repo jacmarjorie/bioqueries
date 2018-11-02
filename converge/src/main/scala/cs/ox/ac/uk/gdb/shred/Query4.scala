@@ -113,7 +113,6 @@ object Query4{
     //construct query
     var start2 = System.currentTimeMillis()
    
-    // this did not update correctly 
     val q1_dict = g_flat.join(c_flat).map{
                     case (sample, ((genotype, vid), iscase)) => (vid, iscase) -> genotype
     }.combineByKey(

@@ -176,6 +176,11 @@ object App{
                     case row => (row.getString(1), row.getInt(2)+1) -> row.getInt(0)
                   }
         val annots = annotations.makeRequest(snps)
+       /** val data = variants.map{ case v => 
+                                ((v.getContig, v.getStart), v) 
+                }.join(snps_table).map{
+                                case ((contig, start), (v, dbsnp)) => (dbsnp, v)
+                }.join(annots)*/
 
         for(i <- 1 to 1){
           q5.testFlat(c, variants, clinic, snps, annots)

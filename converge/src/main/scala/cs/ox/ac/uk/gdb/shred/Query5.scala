@@ -110,15 +110,35 @@ object Query5{
     printer2.flush
   }
 
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
-    //shred
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[org.apache.spark.sql.Row]): Unit = {
+    
+    val data = variants.map{ case v =>
+                                ((v.getContig, v.getStart), v)
+                }.join(snps_table).map{
+                      case ((contig, start), (v, dbsnp)) => (dbsnp, v)
+                }.join(annots)
+
     var start = System.currentTimeMillis()
-    val (v_flat, v_dict) = Utils.shred2(vs)
-    v_dict.cache
-    v_dict.count
-    v_flat.cache
+
+    // shred variant data
+    val lbl = data.zipWithUniqueId
+    val v_flat = lbl.map{ 
+                    case ((dbsnp, (variant, annot)), l) => ((variant.getContig, variant.getStart), l) 
+                  }
+    val g_dict = lbl.map{ 
+                    case ((dbsnp, (variant, annot)), l) => (l, variant.getGenotypesOrderedByName) 
+                  }
+    val a_dict = lbl.map{ 
+                    case ((dbsnp, (variant, annot)), l) => 
+                      (l, annot.getAs[List[org.apache.spark.sql.Row]]("transcript_consequence")) }
     v_flat.count
+    g_dict.count
+    a_dict.count
     vs.unpersist()
+    
+    // clinial data
+    val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
+   
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
       val p3 = v_dict.mapPartitionsWithIndex{
@@ -129,21 +149,12 @@ object Query5{
     
     //construct query
     var start2 = System.currentTimeMillis()
-    val q1_flat = v_flat
     
-    val q1_dict_1 = v_dict.flatMap{
+    val g_flat = v_dict.flatMap{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
     
-    val snpJoin = v_flat.join(snps).map{
-      case ((contig, start), (vid, snpid)) => snpid -> vid
-    }.join(annots).map{
-      case (dbsnp, (vid, annot)) => vid -> annot
-    }
-
-    val q1_dict_2 = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
-    
-    val q1_dict = q1_dict_1.join(q1_dict_2).map{
+    val q1_dict = g_flat.join(c_flat).map{
         case (_, ((l, gt_call), clinAttr)) => (l, clinAttr) -> gt_call
     }.combineByKey(
       (genotype) => {
@@ -162,21 +173,24 @@ object Query5{
       }},
       (acc1: (Int, Int), acc2: (Int, Int)) => {
         (acc1._1 + acc2._1, acc1._2 + acc2._2)
-      }).groupBy{
-        case ((id, iscase), _) => id
-      }.map{
-        case (id, ratios) => ratios.toList match {
-          case List(((_, 1.0), (cseAlt,cseRef)), ((_, 0.0), (cntrlAlt, cntrlRef))) => 
-                                (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
-          case List(((_, 0.0), (cseAlt,cseRef)), ((_, 1.0), (cntrlAlt, cntrlRef))) => 
-                                (id, (cseAlt.toDouble/cseRef)/(cntrlAlt.toDouble/cntrlRef))
-      }
-    }.sortBy(_._2).join(snpJoin).map{
-        case (vid, (odds, annot)) =>
-            vid -> (odds, annot.getAs[String]("most_severe_consequence"))
+      }).map{
+        case ((vid, iscase), (ref, alt)) => vid -> (iscase, alt.toDouble/ref)
+      }.reduceByKey{
+        case ((1.0, ratioAlt), (0.0, ratioRef)) =>
+            (ratioAlt/ratioRef, 1.0)
+        case ((0.0, ratioRef), (1.0, ratioAlt)) =>
+            (ratioAlt/ratioRef, 1.0)
+      }.mapPartitions(it => {
+        it.toList.groupBy(_._1)
+        .mapValues(_.map(_._2)).iterator
+      }, true)
+    q1_dict.count
+
+    val a_flat = a_dict.flatMap{
+      case (aid, annot) => annot.map{
+        case conseq => Utils.parseAnnot(aid, conseq)}
     }
 
-    q1_dict.count
     var end2 = System.currentTimeMillis() - start2
 
     if (get_skew){
@@ -188,9 +202,12 @@ object Query5{
     
     //unshred
     var start3 = System.currentTimeMillis()
-    val q1 = unshred(q1_flat, q1_dict)
+    val q1 = q1_dict.join(a_flat).join(v_flat).map{
+        case (_, ((oddsratio, annot), (contig, start))) => (contig, start, annot, oddsratio)
+    }
     //q1.cache
     q1.count
+  
     var end3 = System.currentTimeMillis()
     var end = end3 - start
     var end4 = end3 - start3

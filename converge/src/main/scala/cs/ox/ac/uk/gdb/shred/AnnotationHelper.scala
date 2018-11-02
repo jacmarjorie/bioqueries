@@ -21,8 +21,9 @@ class AnnotationHelper(spark_session: SparkSession, server: String, ext: String)
     def makeRequest(snps: RDD[((String, Int), Int)]) = {
       val requestGroups = snps.map(s => "\"rs"+s._2+"\"").collect.toList.grouped(200)
       requestGroups.map(grp =>  
-                  getAnnotations("{ \"ids\": ["+grp.mkString(",")+" ] }").rdd.map( annot => 
-                      Integer.parseInt(annot.getString(4).replace("rs", "")) -> annot)).reduce(_ union _)
+                  getAnnotations("{ \"ids\": ["+grp.mkString(",")+" ] }").rdd).reduce(_ union _)
+                      //.map( annot => 
+                      //Integer.parseInt(annot.getString(4).replace("rs", "")) -> annot)).reduce(_ union _)
     }
     
     def getAnnotations(postBody: String): DataFrame = {
