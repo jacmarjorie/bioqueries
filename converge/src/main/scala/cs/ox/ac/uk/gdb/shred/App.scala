@@ -175,12 +175,8 @@ object App{
         val snps = gdbmap.query(s).rdd.map{
                     case row => (row.getString(1), row.getInt(2)+1) -> row.getInt(0)
                   }
-        val annots = annotations.makeRequest(snps)
-       /** val data = variants.map{ case v => 
-                                ((v.getContig, v.getStart), v) 
-                }.join(snps_table).map{
-                                case ((contig, start), (v, dbsnp)) => (dbsnp, v)
-                }.join(annots)*/
+        val annots = annotations.makeRequest(snps).map(r => 
+                      (Integer.parseInt(r.getAs[String]("id").replace("rs", "")), r))
 
         for(i <- 1 to 1){
           q5.testFlat(c, variants, clinic, snps, annots)

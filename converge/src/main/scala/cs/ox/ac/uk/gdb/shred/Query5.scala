@@ -50,7 +50,6 @@ object Query5{
 
     val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
 
-
     val oddsratio = genotypes.join(clinJoin).map{
                           case (sample, ((contig, start, vid, genotype), iscase)) => 
                                                   ((contig, start, vid, iscase), genotype)
@@ -110,11 +109,11 @@ object Query5{
     printer2.flush
   }
 
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[org.apache.spark.sql.Row]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
     
-    val data = variants.map{ case v =>
+    val data = vs.map{ case v =>
                                 ((v.getContig, v.getStart), v)
-                }.join(snps_table).map{
+                }.join(snps).map{
                       case ((contig, start), (v, dbsnp)) => (dbsnp, v)
                 }.join(annots)
 
@@ -123,7 +122,7 @@ object Query5{
     // shred variant data
     val lbl = data.zipWithUniqueId
     val v_flat = lbl.map{ 
-                    case ((dbsnp, (variant, annot)), l) => ((variant.getContig, variant.getStart), l) 
+                    case ((dbsnp, (variant, annot)), l) => (l, (variant.getContig, variant.getStart)) 
                   }
     val g_dict = lbl.map{ 
                     case ((dbsnp, (variant, annot)), l) => (l, variant.getGenotypesOrderedByName) 
@@ -141,7 +140,7 @@ object Query5{
    
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
-      val p3 = v_dict.mapPartitionsWithIndex{
+      val p3 = g_dict.mapPartitionsWithIndex{
             case (i,rows) => Iterator((i,rows.size))
         }.map(r => label+",q1_shred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
       printer2.println(p3)
@@ -150,7 +149,7 @@ object Query5{
     //construct query
     var start2 = System.currentTimeMillis()
     
-    val g_flat = v_dict.flatMap{
+    val g_flat = g_dict.flatMap{
         case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
     }
     

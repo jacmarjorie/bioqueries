@@ -34,13 +34,14 @@ object Utils extends Serializable{
 
     def shred2(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
-      val flat = lbl.map( i => i match { case (x,l) => ((x.getContig, x.getStart), l) })
+      val flat = lbl.map( i => i match { case (x,l) => (l, (x.getContig, x.getStart)) })
       val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
       (flat,dict)
     }
 
     /**
       * This was an effort to the issues I list in shred() above
+      * key is optimized for the clinical join
      */
     def shred3(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
@@ -55,4 +56,34 @@ object Utils extends Serializable{
       (flat,dict)
     }
 
+    /**
+      * This was an effort to the issues I list in shred() above
+      * however, it keeps the index on variant
+     */
+    def shred4(rdd: RDD[VariantContext]) = {
+      val lbl = rdd.zipWithUniqueId
+      val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
+      // what does a full shred of the genotype data look like, 
+      // note that i defind the output type to join nicely with the clinical set (on sampleName)
+      // but i could have still keyed this by the variant label
+      val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
+                      case genotype => (vpk, (genotype.getSampleName, reportGenotypeType(genotype)))
+                    }
+                 }
+      (flat,dict)
+    }
+
+    def parseAnnot(aid: Long, conseq: org.apache.spark.sql.Row) = {
+      (aid, (
+        conseq.getAs[String]("biotype"), 
+        conseq.getAs[Seq[String]]("consequence_terms"), 
+        conseq.getAs[String]("impact"), 
+        conseq.getAs[String]("gene_id"), 
+        conseq.getAs[String]("hgnc_id"), 
+        conseq.getAs[String]("transcript_id"), 
+        conseq.getAs[String]("variant_allele"), 
+        conseq.getAs[String]("gene_symbol"))
+      )
+    } 
 }
+

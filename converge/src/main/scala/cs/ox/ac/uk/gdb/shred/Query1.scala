@@ -89,14 +89,12 @@ object Query1{
   def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     //shred
     var start = System.currentTimeMillis()
-    val (v_flat, g_flat) = Utils.shred4(vs)
-    val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
+    val (v_flat, v_dict) = Utils.shred2(vs)
     v_flat.count
-    g_flat.count
-    c_flat.count
+    v_dict.count
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
-      val p3 = g_flat.mapPartitionsWithIndex{
+      val p3 = v_flat.mapPartitionsWithIndex{
             case (i,rows) => Iterator((i,rows.size))
         }.map(r => label+",q1_shred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
       printer2.println(p3)
@@ -104,12 +102,14 @@ object Query1{
     
     //construct query
     var start2 = System.currentTimeMillis()
-      
-    val g_reorg = g_flat.map{
-                    case (vid, (name, geno)) => (name, (geno, vid))
+    val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))    
+    val g_flat = v_dict.flatMap{
+                    case (vid, genos) => genos.map{
+                        case geno => (geno.getSampleName, (Utils.reportGenotypeType(geno), vid))
+                    }
                   }
   
-    val q1_dict = g_reorg.join(c_flat).map{
+    val q1_dict = g_flat.join(c_flat).map{
                     case (sample, ((genotype, vid), iscase)) => (vid, iscase) -> genotype
     }.combineByKey(
       (genotype) => {
