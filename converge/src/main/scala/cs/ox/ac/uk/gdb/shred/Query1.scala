@@ -90,7 +90,6 @@ object Query1{
     //shred
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred2(vs)
-    v_flat.count
     v_dict.count
     var end1 = System.currentTimeMillis() - start
     if (get_skew){
