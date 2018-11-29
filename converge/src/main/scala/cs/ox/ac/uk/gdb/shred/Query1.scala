@@ -29,24 +29,18 @@ object Query1{
 
   def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
     
-    if (get_skew){
-      val p1 = vs.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_initial,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p1)
-    }
-
     var start = System.currentTimeMillis()
     //flatten, handle duplicate variant data
     val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map{
+    val genotypes = rdd.mapPartitions{ p => p.map{
                       case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
                         (sample, (variant.getContig, variant.getStart, id,
                           Utils.reportGenotypeType(variant.getGenotype(sample)))))
-                    }.flatMap(g => g)
-
+                    }}.flatMap(g => g)
     val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
- 
+    genotypes.count 
+    clinJoin.count
+    var end1 = System.currentTimeMillis() - start
     //query on flatten
     val alleleCounts = genotypes.join(clinJoin).map{
                           case (sample, ((contig, start, vid, genotype), iscase)) =>
@@ -73,15 +67,8 @@ object Query1{
     alleleCounts.count
     var end = System.currentTimeMillis() - start
 
-
-    if (get_skew){
-      val p2 = alleleCounts.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_flat,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p2)
-    }
-
-    printer.println(label+",q1_flat,"+region+","+end)
+    printer.println(label+",q1_flat_flatten,"+region+","+end1)
+    printer.println(label+",q1_flat_total,"+region+","+end)
     printer.flush
     printer2.flush
   }
@@ -92,22 +79,15 @@ object Query1{
     val (v_flat, v_dict) = Utils.shred2(vs)
     v_dict.count
     var end1 = System.currentTimeMillis() - start
-    if (get_skew){
-      val p3 = v_flat.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
-    }
-    
+    var start1 = System.currentTimeMillis()
     //construct query
-    var start2 = System.currentTimeMillis()
     val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))    
     val g_flat = v_dict.flatMap{
                     case (vid, genos) => genos.map{
                         case geno => (geno.getSampleName, (Utils.reportGenotypeType(geno), vid))
                     }
                   }
-  
+   
     val q1_dict = g_flat.join(c_flat).map{
                     case (sample, ((genotype, vid), iscase)) => (vid, iscase) -> genotype
     }.combineByKey(
@@ -133,33 +113,18 @@ object Query1{
         .mapValues(_.map(_._2)).iterator
     }, true)
     q1_dict.count
-    var end2 = System.currentTimeMillis() - start2
+    var end2 = System.currentTimeMillis() - start1   
+    var start2 = System.currentTimeMillis()
 
-    if (get_skew){
-      val p3 = q1_dict.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred_query,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
-    }
-    
     //unshred
-    var start3 = System.currentTimeMillis()
     val q1 = unshred(v_flat, q1_dict)
-    //q1.cache
     q1.count
-    var end3 = System.currentTimeMillis()
-    var end = end3 - start
-    var end4 = end3 - start3
-    printer.println(label+",q1_shred,"+region+","+end1)
+    var end3 = System.currentTimeMillis() - start2
+    var end = System.currentTimeMillis() - start
+    printer.println(label+",q1_shred_shred,"+region+","+end1)
     printer.println(label+",q1_shred_query,"+region+","+end2)
-    printer.println(label+",q1_unshred,"+region+","+end4)
+    printer.println(label+",q1_shred_unshred,"+region+","+end3)
     printer.println(label+",q1_shred_total,"+region+","+end)
-    if (get_skew){
-      val p4 = q1.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_unshred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p4)
-    }
     printer.flush
     printer2.flush
   }

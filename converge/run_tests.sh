@@ -15,8 +15,8 @@ else
     --master spark://192.168.11.235:7077 \
     --driver-class-path target/lib/postgresql-9.4.1212.jre6.jar \
     --executor-cores 4 \
-    --num-executors 8 \
-    --executor-memory 24G \
+    --num-executors 13 \
+    --executor-memory 28G \
     --driver-memory 32G \
     --class cs.ox.ac.uk.shred.test.converge.App target/shred-test-converge-1.0.jar $@
 fi

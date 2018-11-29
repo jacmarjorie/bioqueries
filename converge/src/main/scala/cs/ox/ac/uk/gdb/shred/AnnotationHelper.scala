@@ -17,7 +17,6 @@ class AnnotationHelper(spark_session: SparkSession, server: String, ext: String)
     import spark_session.implicits._
     val url = new URL(server + ext)
     
-    // need to iterate here
     def makeRequest(snps: RDD[((String, Int), Int)]) = {
       val requestGroups = snps.map(s => "\"rs"+s._2+"\"").collect.toList.grouped(200)
       requestGroups.map(grp =>  

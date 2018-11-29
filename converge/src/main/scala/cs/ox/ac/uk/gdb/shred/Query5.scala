@@ -32,195 +32,205 @@ object Query5{
 
   def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
     
-    if (get_skew){
-      val p1 = vs.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_initial,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p1)
-    }
-    var start = System.currentTimeMillis()
-
-    //flatten
-    val rdd = vs.zipWithUniqueId
-    val genotypes = rdd.map{
-                      case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
-                        (sample, (variant.getContig, variant.getStart, id, 
-                          Utils.reportGenotypeType(variant.getGenotype(sample)))))
-                    }.flatMap(g => g)
-
-    val clinJoin = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
-
-    val oddsratio = genotypes.join(clinJoin).map{
-                          case (sample, ((contig, start, vid, genotype), iscase)) => 
-                                                  ((contig, start, vid, iscase), genotype)
-                        }
-                        .combineByKey(
-                          (genotype) => {
-                            genotype match {
-                              case 0 => (2, 0) //homref
-                              case 1 => (1, 1) //het
-                              case 2 => (0, 2) //homvar
-                              case _ => (0, 0) //nocall
-                          }},
-                          (acc: (Int, Int), genotype) => {
-                            genotype match {
-                              case 0 => (acc._1 + 2, acc._2 + 0) //homref
-                              case 1 => (acc._1 + 1, acc._2 + 1) //het
-                              case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-                              case _ => (acc._1 + 0, acc._2 + 0) //nocall
-                          }},
-                          (acc1: (Int, Int), acc2: (Int, Int)) => {
-                            (acc1._1 + acc2._1, acc1._2 + acc2._2)
-                          }).map{
-                            case (id, (alt, ref)) =>
-                                  (id, (alt.toDouble/ref))
-                          }.groupBy{
-                            case ((contig, start, id, _), _) => (contig, start, id)
-                          }.map{
-                            case (id, ratios) => ratios.toList match {
-                              case List(((_,_,_,1.0), cse), ((_,_,_,0.0), cntrl)) => (id, cse/cntrl)
-                              case List(((_,_,_,0.0), cse), ((_,_,_,1.0), cntrl)) => (id, cse/cntrl)
-                              case _ => (id, 0.0)
-                            }
-                          }.map{
-                            case ((contig, start, id), odds) => (contig, start) -> (id, odds) 
-                          }.join(snps).map{
-                            case ((contig, start), ((vid, odds), dbsnp)) => dbsnp -> (contig, start, vid, odds)
-                          }.join(annots).map{
-                            case (dbsnp, ((contig, start, vid, odds), annot)) => {
-                              // This is going to work with nested attributes from the annotatoin API
-                              (dbsnp, contig, start, vid, odds, annot.getAs[String]("most_severe_consequence"))
-                            }
-                          }.sortBy(_._5)
-    oddsratio.count
-    var end = System.currentTimeMillis() - start
-    oddsratio.take(100).foreach(println)
-
-
-    if (get_skew){
-      val p2 = oddsratio.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_flat,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p2)
-    }
-
-    printer.println(label+",q1_flat,"+region+","+end)
-    printer.flush
-    printer2.flush
-  }
-
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
-    
     val data = vs.map{ case v =>
                                 ((v.getContig, v.getStart), v)
                 }.join(snps).map{
                       case ((contig, start), (v, dbsnp)) => (dbsnp, v)
                 }.join(annots)
+    data.count
+    var start = System.currentTimeMillis()  
+    val lbl = data.zipWithUniqueId
+    val g_flat = lbl.flatMap{
+      case ((dbsnp, (variant:VariantContext, annot)), id) => variant.getGenotypesOrderedByName.flatMap{
+        geno => geno.getGenotypeString.split("/").map{
+            g => ((variant.getContig, variant.getStart, 
+                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0), 
+                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, g), 
+                  (geno.getSampleName, Utils.reportGenotypeType(geno), id))
+            }
+        }}
+    
+    val a_flat = lbl.flatMap{
+      case ((dbsnp, (variant, annot)), l) => try {
+            Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences"))
+        }catch{
+            case e:Exception => try {
+                 Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
+            }catch{
+                case e: Exception =>  try{
+                 Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
+                }catch{
+                    case e: Exception => 
+                        Utils.parseAnnotFlat(variant, Seq[org.apache.spark.sql.Row]())
+            }
+        }
+      }
+    }
 
+    g_flat.count
+    a_flat.count
+    val c_flat = clin.select("id", "iscase").rdd.map(s => (s.getString(0), s.getDouble(1)))   
+    var end1 = System.currentTimeMillis() - start
+    var start1 = System.currentTimeMillis()
+
+    val q1_dict = g_flat.join(a_flat.filter(_._2 != null)).map{
+      case ((contig, start, ref, alts, allele), 
+            ((sample, call, dbsnp), (conseq, biotype, impact, gene, hgnc, trans, symb))) => 
+              ((contig, start, ref, alts, conseq), 1)
+      }.reduceByKey(_ + _).map{
+        case ((contig, start, ref, alts, conseq), cnt) => (contig, start, ref, alts) -> (conseq, cnt)
+      }
+
+    val q1_dict2 = g_flat.map{
+      case ((contig, start, ref, alts, allele), (sample, geno, dbsnp)) => 
+        (sample, (contig, start, ref, alts, allele, geno))
+      }.join(c_flat).map{
+        case (sample, ((contig, start, ref, alts, allele, geno), iscase)) => (contig, start, ref, alts, iscase) -> geno
+      }.combineByKey(
+        (genotype:Int) => {
+          genotype match {
+            case 0 => (2, 0) //homref
+            case 1 => (1, 1) //het
+            case 2 => (0, 2) //homvar
+            case _ => (0, 0) //nocall
+          }},
+          (acc: (Int, Int), genotype:Int) => {
+          genotype match {
+            case 0 => (acc._1 + 2, acc._2 + 0) //homref
+            case 1 => (acc._1 + 1, acc._2 + 1) //het
+            case 2 => (acc._1 + 0, acc._2 + 2) //homvar
+            case _ => (acc._1 + 0, acc._2 + 0) //nocall
+          }},
+          (acc1: (Int, Int), acc2: (Int, Int)) => {
+            (acc1._1 + acc2._1, acc1._2 + acc2._2)
+          })
+          .map{
+            case ((contig, start, ref, alts, iscase), (alt, refCnt)) => 
+              ((contig, start, ref, alts), (iscase, alt, refCnt))
+          }
+
+      val results = q1_dict.join(q1_dict2)
+      results.count
+      var end2 = System.currentTimeMillis() - start1
+      var end = System.currentTimeMillis() - start
+      printer.println(label+",q1_flat_flatten,"+region+","+end1)
+      printer.println(label+",q1_flat_query,"+region+","+end2)
+      printer.println(label+",q1_flat_total,"+region+","+end)
+      printer.flush
+      printer2.flush
+  }
+  
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
+    
+    val data = vs.map{ case v => // 114
+                                ((v.getContig, v.getStart), v)
+                }.join(snps).map{ // 116
+                      case ((contig, start), (v, dbsnp)) => (dbsnp, v)
+                }.join(annots)
+    data.count
     var start = System.currentTimeMillis()
 
     // shred variant data
     val lbl = data.zipWithUniqueId
-    val v_flat = lbl.map{ 
-                    case ((dbsnp, (variant, annot)), l) => (l, (variant.getContig, variant.getStart)) 
-                  }
-    val g_dict = lbl.map{ 
-                    case ((dbsnp, (variant, annot)), l) => (l, variant.getGenotypesOrderedByName) 
-                  }
-    val a_dict = lbl.map{ 
-                    case ((dbsnp, (variant, annot)), l) => 
-                      (l, annot.getAs[List[org.apache.spark.sql.Row]]("transcript_consequence")) }
-    v_flat.count
-    g_dict.count
-    a_dict.count
-    vs.unpersist()
-    
+    val v_flat = lbl.map{
+                case ((dbsnp, (variant, annot)), l) => (l, (variant.getContig, variant.getStart, variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0), variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList))
+              }
+    val g_dict = lbl.map{
+                case ((dbsnp, (variant, annot)), l) => (l, variant.getGenotypesOrderedByName)
+              }
+    val a_dict = lbl.map{
+                case ((dbsnp, (variant, annot)), l) => try {
+                        (l, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences")) 
+                    }catch{
+                        case e:Exception => try {
+                            (l, annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
+                        }catch{
+                            case e: Exception =>  try{
+                                (l, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
+                            }catch{
+                                case e: Exception => (l, Seq[org.apache.spark.sql.Row]())
+                            }
+                        }
+                    }
+                }
+    g_dict.count //145
+    a_dict.count //146
+    var end1 = System.currentTimeMillis() - start
+    var start1 = System.currentTimeMillis() 
+   
     // clinial data
     val c_flat = clin.select("id", "iscase").rdd.map(s =>(s.getString(0), s.getDouble(1)))
    
-    var end1 = System.currentTimeMillis() - start
-    if (get_skew){
-      val p3 = g_dict.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
-    }
     
     //construct query
-    var start2 = System.currentTimeMillis()
-    
-    val g_flat = g_dict.flatMap{
-        case (l, gg) => gg.map( g => g.getSampleName -> (l, Utils.reportGenotypeType(g)))
+
+    val a_flat = a_dict.filter(_._2 != null).flatMap{ //154
+      case (aid, annot) => annot.flatMap{
+      case conseq => Utils.parseAnnot(aid, conseq)}
     }
     
-    val q1_dict = g_flat.join(c_flat).map{
-        case (_, ((l, gt_call), clinAttr)) => (l, clinAttr) -> gt_call
-    }.combineByKey(
-      (genotype) => {
-        genotype match {
-          case 0 => (2, 0) //homref
-          case 1 => (1, 1) //het
-          case 2 => (0, 2) //homvar
-          case _ => (0, 0) //nocall
+    val g_flat = g_dict.flatMap{ //159
+      case (l, gg) => gg.flatMap{
+        g => g.getGenotypeString().split("/").map{
+            s => ((l, s), (g.getSampleName, Utils.reportGenotypeType(g)))
+          }
+        }
+      }
+  
+    val q1_dict1 = g_flat.join(a_flat).map{ //167
+                    case ((vid, allele), (sample, (conseq, biotype, impact, gene, hgnc, trans, symb))) => 
+                        ((vid, conseq), 1)
+                    }.reduceByKey(_ + _).map{
+                      case ((vid, conseq), cnt) => vid -> (conseq, cnt)
+                    }
+
+    val q1_dict2 = g_flat.map{
+        case ((l, a), (s, g)) => (s, (l,a,g))
+      }.join(c_flat).map{
+        case (s, ((v, a, g), iscase)) => (v, iscase) -> g
+      }
+    .combineByKey(
+    (genotype:Int) => {
+      genotype match {
+        case 0 => (2, 0) //homref
+        case 1 => (1, 1) //het
+        case 2 => (0, 2) //homvar
+        case _ => (0, 0) //nocall
       }},
-      (acc: (Int, Int), genotype) => {
-        genotype match {
-          case 0 => (acc._1 + 2, acc._2 + 0) //homref
-          case 1 => (acc._1 + 1, acc._2 + 1) //het
-          case 2 => (acc._1 + 0, acc._2 + 2) //homvar
-          case _ => (acc._1 + 0, acc._2 + 0) //nocall
+      (acc: (Int, Int), genotype:Int) => {
+      genotype match {
+        case 0 => (acc._1 + 2, acc._2 + 0) //homref
+        case 1 => (acc._1 + 1, acc._2 + 1) //het
+        case 2 => (acc._1 + 0, acc._2 + 2) //homvar
+        case _ => (acc._1 + 0, acc._2 + 0) //nocall
       }},
       (acc1: (Int, Int), acc2: (Int, Int)) => {
         (acc1._1 + acc2._1, acc1._2 + acc2._2)
       }).map{
-        case ((vid, iscase), (ref, alt)) => vid -> (iscase, alt.toDouble/ref)
-      }.reduceByKey{
-        case ((1.0, ratioAlt), (0.0, ratioRef)) =>
-            (ratioAlt/ratioRef, 1.0)
-        case ((0.0, ratioRef), (1.0, ratioAlt)) =>
-            (ratioAlt/ratioRef, 1.0)
-      }.mapPartitions(it => {
+        case ((l, iscase), (alt, ref)) => (l, (iscase, alt, ref))
+      }
+      .mapPartitions(it => {
         it.toList.groupBy(_._1)
         .mapValues(_.map(_._2)).iterator
       }, true)
-    q1_dict.count
-
-    val a_flat = a_dict.flatMap{
-      case (aid, annot) => annot.map{
-        case conseq => Utils.parseAnnot(aid, conseq)}
-    }
-
-    var end2 = System.currentTimeMillis() - start2
-
-    if (get_skew){
-      val p3 = q1_dict.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_shred_query,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p3)
-    }
-    
-    //unshred
-    var start3 = System.currentTimeMillis()
-    val q1 = q1_dict.join(a_flat).join(v_flat).map{
-        case (_, ((oddsratio, annot), (contig, start))) => (contig, start, annot, oddsratio)
-    }
-    //q1.cache
-    q1.count
-  
-    var end3 = System.currentTimeMillis()
-    var end = end3 - start
-    var end4 = end3 - start3
-    q1.take(100).foreach(println)
-    printer.println(label+",q1_shred,"+region+","+end1)
+       
+    q1_dict1.count
+    q1_dict2.count
+    var end2 = System.currentTimeMillis() - start1
+    var start2 = System.currentTimeMillis()
+    //unshred 
+    val result = q1_dict1.join(q1_dict2).join(v_flat)
+            .map{
+                case (vid, (((annot, cnt), alleleCnts),(contig, start, ref, alts))) => 
+                    (contig, start, ref, alts, annot, cnt, alleleCnts)
+              } 
+    result.count
+    var end3 = System.currentTimeMillis() - start2
+    var end = System.currentTimeMillis() - start
+    printer.println(label+",q1_shred_shred,"+region+","+end1)
     printer.println(label+",q1_shred_query,"+region+","+end2)
-    printer.println(label+",q1_unshred,"+region+","+end4)
+    printer.println(label+",q1_shred_unshred,"+region+","+end3)
     printer.println(label+",q1_shred_total,"+region+","+end)
-    if (get_skew){
-      val p4 = q1.mapPartitionsWithIndex{
-            case (i,rows) => Iterator((i,rows.size))
-        }.map(r => label+",q1_unshred,"+region+","+r._1 +","+r._2).collect.toList.mkString("\n")
-      printer2.println(p4)
-    }
     printer.flush
     printer2.flush
   }

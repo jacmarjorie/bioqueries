@@ -16,7 +16,21 @@ object Utils extends Serializable{
       }
     }
 
+    def flattenVariants(vs: RDD[VariantContext]): RDD[(String, (String, Int, Long, Int))] = {
+      vs.zipWithUniqueId.mapPartitions{ p => p.map{
+            case (variant:VariantContext, id) => variant.getSampleNames.toList.map(sample =>
+                (sample, (variant.getContig, variant.getStart, id,
+                          reportGenotypeType(variant.getGenotype(sample)))))
+            }}.flatMap(g => g)
+    }
 
+    def flattenShredVariants(v_dict: RDD[(Long, java.lang.Iterable[htsjdk.variant.variantcontext.Genotype])]): RDD[(String, (Int, Long))] = {
+      v_dict.flatMap{
+                    case (vid, genos) => genos.map{
+                        case geno => (geno.getSampleName, (Utils.reportGenotypeType(geno), vid))
+                    }
+                  }
+    }
   
     /**
       * The shredding here is taking VariantContext(contig: String, start: Int, genotypes: List[Genotype])
@@ -25,17 +39,14 @@ object Utils extends Serializable{
     def shred(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
       val flat = lbl.map( i => i match { case (x,l) => (x.getContig, x.getStart, l) })
-      // dict is of type RDD[(long, List[Genotype])]
-      // how is this any different than RDD[VariantContext], since the second value is
-      // still a nested list
       val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
       (flat,dict)
     }
 
     def shred2(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
-      val flat = lbl.map( i => i match { case (x,l) => (l, (x.getContig, x.getStart)) })
-      val dict = lbl.map( i => i match { case (x,l) => (l, x.getGenotypesOrderedByName) })
+      val flat = lbl.mapPartitions{ p => p.map{ case (x,l) => (l, (x.getContig, x.getStart))}}
+      val dict = lbl.mapPartitions{ p => p.map{ case (x,l) => (l, x.getGenotypesOrderedByName)}}
       (flat,dict)
     }
 
@@ -46,9 +57,6 @@ object Utils extends Serializable{
     def shred3(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
       val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
-      // what does a full shred of the genotype data look like, 
-      // note that i defind the output type to join nicely with the clinical set (on sampleName)
-      // but i could have still keyed this by the variant label
       val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
                       case genotype => (genotype.getSampleName, (reportGenotypeType(genotype), vpk))
                     }
@@ -63,9 +71,6 @@ object Utils extends Serializable{
     def shred4(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
       val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
-      // what does a full shred of the genotype data look like, 
-      // note that i defind the output type to join nicely with the clinical set (on sampleName)
-      // but i could have still keyed this by the variant label
       val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
                       case genotype => (vpk, (genotype.getSampleName, reportGenotypeType(genotype)))
                     }
@@ -73,17 +78,38 @@ object Utils extends Serializable{
       (flat,dict)
     }
 
-    def parseAnnot(aid: Long, conseq: org.apache.spark.sql.Row) = {
-      (aid, (
-        conseq.getAs[String]("biotype"), 
-        conseq.getAs[Seq[String]]("consequence_terms"), 
-        conseq.getAs[String]("impact"), 
-        conseq.getAs[String]("gene_id"), 
-        conseq.getAs[String]("hgnc_id"), 
-        conseq.getAs[String]("transcript_id"), 
-        conseq.getAs[String]("variant_allele"), 
+  def parseAnnot(aid: Long, conseq: org.apache.spark.sql.Row) = {
+    conseq.getAs[Seq[String]]("consequence_terms").map{
+      c => ((aid, conseq.getAs[String]("variant_allele")),
+        (c,
+        conseq.getAs[String]("biotype"),
+        conseq.getAs[String]("impact"),
+        conseq.getAs[String]("gene_id"),
+        conseq.getAs[String]("hgnc_id"),
+        conseq.getAs[String]("transcript_id"),
         conseq.getAs[String]("gene_symbol"))
       )
-    } 
+    }
+  }
+
+  def parseAnnotFlat(variant: VariantContext, annot: Seq[org.apache.spark.sql.Row]) = {
+    annot.flatMap{
+      conseq => {
+        conseq.getAs[Seq[String]]("consequence_terms").map{
+          c => ((variant.getContig, variant.getStart, 
+                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0), 
+                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, 
+                  conseq.getAs[String]("variant_allele")),
+                  (c,
+                   conseq.getAs[String]("biotype"),
+                   conseq.getAs[String]("impact"),
+                   conseq.getAs[String]("gene_id"),
+                   conseq.getAs[String]("hgnc_id"),
+                   conseq.getAs[String]("transcript_id"),
+                   conseq.getAs[String]("gene_symbol")))
+            }
+          }
+        }
+    }
 }
 

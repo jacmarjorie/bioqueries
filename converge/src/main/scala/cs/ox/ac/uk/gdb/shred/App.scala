@@ -13,6 +13,7 @@ import collection.JavaConverters._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import htsjdk.variant.variantcontext.VariantContext
+import org.apache.spark.storage.StorageLevel
 
 object App{
 
@@ -26,7 +27,7 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val repartition = 8
+    val repartition = 104
     val conf = new SparkConf()
                 .setMaster(argsList(0))
                 .setAppName("GDBShred")
@@ -47,14 +48,14 @@ object App{
     val gdb = new GDBConnector(spark.sparkContext, loader, hostfile, gdbmap, ws, array)
 
     val jdbcDF = spark.read.format("jdbc").option("url", "jdbc:postgresql://192.168.11.249/jflint")
-                .option("dbtable", "converge").option("user", "jflint").option("password", "jflint").load()
+                .option("dbtable", "converge").option("user", "jaclyns").option("password", "jaclyns").load()
 
     val samples = gdbmap.query("callset").rdd.collect.map(r => r(1).toString).toList
 
     val clinic = jdbcDF.where("iscase is not null")
     
     val clincBroadcast = spark.sparkContext.broadcast(jdbcDF.where("iscase is not null")) 
-    val annotations = AnnotationHelper(spark, "https://rest.ensembl.org", "/vep/human/id")   
+    val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")   
  
     val query_regions = List(
       List(("10", 1, 200000)), //734
@@ -64,7 +65,9 @@ object App{
       List(("10", 1, 1200000)), //11004
       List(("10", 1, 1500000)), //14143
       List(("10", 1, 2000000)), //19927
-      List(("10", 1, 5000000)) //50895
+      List(("10", 1, 5000000)), //50895
+      List(("10", 1, 10000000))
+      //List(("10", 1, 135534747))
     )
    
     if(queries contains "1"){
@@ -73,14 +76,17 @@ object App{
       for(region <- query_regions){
       
         val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
-        variants.cache
-        val c = variants.count
+        val c = variants.count 
       
-        for(i <- 1 to 1){
-          q1.testFlat(c, variants, clinic)
+        if(queries contains "flat"){
+          for(i <- 1 to 1){
+            q1.testFlat(c, variants, clinic)
+          }
         }
-        for(i <- 1 to 1){
-          q1.testShred(c, variants, clinic)
+        if(queries contains "shred"){
+          for(i <- 1 to 1){
+            q1.testShred(c, variants, clinic)
+          }
         }
       }
       q1.close()
@@ -92,9 +98,8 @@ object App{
       for(region <- query_regions){
       
         val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
-        variants.cache
-        val c = variants.count
-  
+        val c = variants.count 
+ 
         for(i <- 1 to 1){
           q1bc.testFlat(c, variants, clincBroadcast)
         }
@@ -111,7 +116,6 @@ object App{
       for(region <- query_regions){
       
         val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
-        variants.cache
         val c = variants.count
   
         for(i <- 1 to 1){
@@ -130,7 +134,6 @@ object App{
       for(region <- query_regions){
       
         val variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
-        variants.cache
         val c = variants.count
   
         for(i <- 1 to 1){
@@ -148,14 +151,17 @@ object App{
       for(region <- query_regions){
       
         var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
-        variants.cache
         val c = variants.count
 
-        for(i <- 1 to 1){
-          q4.testFlat(c, variants, clinic)
+        if(queries contains "flat"){
+          for(i <- 1 to 1){
+            q4.testFlat(c, variants, clinic)
+          }
         }
-        for(i <- 1 to 1){
-          q4.testShred(c, variants, clinic)
+        if(queries contains "shred"){
+          for(i <- 1 to 1){
+            q4.testShred(c, variants, clinic)
+          }
         }
       } 
       q4.close()
@@ -166,9 +172,8 @@ object App{
       for(region <- query_regions){
       
         var variants = gdb.queryByRegion(samples, region, false).map(x=>x._2).repartition(repartition)
-        variants.cache
-        val c = variants.count
-      
+        val c = region(0)._3
+     
         // map to dbsnp id
         val s = "(SELECT * FROM snpchrposonref WHERE (chr, pos) IN ("+variants.map(r => 
            ("'"+r.getContig+"'", "'"+Integer.toString(r.getStart.asInstanceOf[Int]-1)+"'")).collect.toList.distinct.mkString(",")+")) AS snptable"
@@ -178,11 +183,15 @@ object App{
         val annots = annotations.makeRequest(snps).map(r => 
                       (Integer.parseInt(r.getAs[String]("id").replace("rs", "")), r))
 
-        for(i <- 1 to 1){
-          q5.testFlat(c, variants, clinic, snps, annots)
+        if(queries contains "flat"){
+          for(i <- 1 to 1){
+            q5.testFlat(c, variants, clinic, snps, annots)
+          }
         }
-        for(i <- 1 to 1){
-          q5.testShred(c, variants, clinic, snps, annots)
+        if(queries contains "shred"){
+          for(i <- 1 to 1){
+            q5.testShred(c, variants, clinic, snps, annots)
+          }
         }
       } 
       q5.close()
