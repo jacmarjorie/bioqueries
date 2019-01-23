@@ -66,7 +66,6 @@ object Query1{
                           })
     alleleCounts.count
     var end = System.currentTimeMillis() - start
-
     printer.println(label+",q1_flat_flatten,"+region+","+end1)
     printer.println(label+",q1_flat_total,"+region+","+end)
     printer.flush
@@ -78,6 +77,8 @@ object Query1{
     var start = System.currentTimeMillis()
     val (v_flat, v_dict) = Utils.shred2(vs)
     v_dict.count
+    //val v_flat = sc.textFile("file:///mnt/app_hdd/scratch/flint-spark/vflat_"+region.toString)
+    //val v_dict = sc.textFile("file:///mnt/app_hdd/scratch/flint-spark/vdict_"+region.toString)
     var end1 = System.currentTimeMillis() - start
     var start1 = System.currentTimeMillis()
     //construct query

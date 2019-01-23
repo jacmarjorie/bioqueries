@@ -1,5 +1,6 @@
 package cs.ox.ac.uk.shred.test.converge
 
+//import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
 import htsjdk.variant.variantcontext.VariantContext
@@ -38,7 +39,38 @@ object Query5{
                       case ((contig, start), (v, dbsnp)) => (dbsnp, v)
                 }.join(annots)
     data.count
-    var start = System.currentTimeMillis()  
+    val genos = data.flatMap{ case ((dbsnp, (variant, annot))) => {
+      variant.getGenotypesOrderedByName.flatMap{
+        geno => geno.getGenotypeString.split("/").map{
+            g => ((variant.getContig, variant.getStart,
+                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0),
+                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, g),
+                  (geno.getSampleName, Utils.reportGenotypeType(geno)))
+            }
+        }
+    }}
+
+    val annot_flat = data.flatMap{ case (dbsnp, (variant, annot)) => 
+      try {
+        Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences"))
+      }catch{
+        case e:Exception => try {
+             Utils.parseAnnotFlat(variant,
+                annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
+        }catch{
+            case e: Exception =>  try{
+              Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
+            }catch{
+                case e: Exception =>
+                    Utils.parseAnnotFlat(variant, Seq[org.apache.spark.sql.Row]())
+            }
+        }
+      }
+    }
+    val result = genos.join(annot_flat)
+    result.count
+    result.take(2)
+    /**var start = System.currentTimeMillis()  
     val lbl = data.zipWithUniqueId
     val g_flat = lbl.flatMap{
       case ((dbsnp, (variant:VariantContext, annot)), id) => variant.getGenotypesOrderedByName.flatMap{
@@ -113,11 +145,11 @@ object Query5{
       results.count
       var end2 = System.currentTimeMillis() - start1
       var end = System.currentTimeMillis() - start
-      printer.println(label+",q1_flat_flatten,"+region+","+end1)
-      printer.println(label+",q1_flat_query,"+region+","+end2)
-      printer.println(label+",q1_flat_total,"+region+","+end)
+      printer.println(label+",q5_flat_flatten,"+region+","+end1)
+      printer.println(label+",q5_flat_query,"+region+","+end2)
+      printer.println(label+",q5_flat_total,"+region+","+end)
       printer.flush
-      printer2.flush
+      printer2.flush**/
   }
   
   def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
@@ -227,10 +259,10 @@ object Query5{
     result.count
     var end3 = System.currentTimeMillis() - start2
     var end = System.currentTimeMillis() - start
-    printer.println(label+",q1_shred_shred,"+region+","+end1)
-    printer.println(label+",q1_shred_query,"+region+","+end2)
-    printer.println(label+",q1_shred_unshred,"+region+","+end3)
-    printer.println(label+",q1_shred_total,"+region+","+end)
+    printer.println(label+",q5_shred_shred,"+region+","+end1)
+    printer.println(label+",q5_shred_query,"+region+","+end2)
+    printer.println(label+",q5_shred_unshred,"+region+","+end3)
+    printer.println(label+",q5_shred_total,"+region+","+end)
     printer.flush
     printer2.flush
   }

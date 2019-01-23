@@ -50,31 +50,13 @@ object Utils extends Serializable{
       (flat,dict)
     }
 
-    /**
-      * This was an effort to the issues I list in shred() above
-      * key is optimized for the clinical join
-     */
-    def shred3(rdd: RDD[VariantContext]) = {
+    def shredSave(rdd: RDD[VariantContext]) = {
       val lbl = rdd.zipWithUniqueId
-      val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
-      val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
-                      case genotype => (genotype.getSampleName, (reportGenotypeType(genotype), vpk))
-                    }
-                 }
-      (flat,dict)
-    }
-
-    /**
-      * This was an effort to the issues I list in shred() above
-      * however, it keeps the index on variant
-     */
-    def shred4(rdd: RDD[VariantContext]) = {
-      val lbl = rdd.zipWithUniqueId
-      val flat = lbl.map{ case (variant,vpk) => (vpk, (variant.getContig, variant.getStart)) }
-      val dict = lbl.flatMap{ case (variant, vpk) => variant.getGenotypesOrderedByName.map{
-                      case genotype => (vpk, (genotype.getSampleName, reportGenotypeType(genotype)))
-                    }
-                 }
+      val flat = lbl.mapPartitions{ p => p.map{ case (x,l) => (l, (x.getContig, x.getStart))}}
+      val dict = lbl.mapPartitions{ p => p.map{ case (x:VariantContext,l:Long) => (l, x.getGenotypesOrderedByName.map{
+                      case genotype => (genotype.getSampleName, (reportGenotypeType(genotype)))
+                    })
+                 }}
       (flat,dict)
     }
 

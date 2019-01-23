@@ -9,7 +9,7 @@ import scala.util.parsing.json._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
 
-class AnnotationHelper(spark_session: SparkSession, server: String, ext: String){
+class AnnotationHelper(spark_session: SparkSession, server: String, ext: String) extends Serializable{
     
     // val server = "https://rest.ensembl.org"
     // val ext = "/vep/human/id"

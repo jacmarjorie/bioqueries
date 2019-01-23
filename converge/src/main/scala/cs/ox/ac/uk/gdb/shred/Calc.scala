@@ -1,10 +1,12 @@
 package cs.ox.ac.uk.shred.test.converge
 
+//import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
+import org.apache.spark.sql.Row
 import htsjdk.variant.variantcontext._
 
-object Calc extends Serializable{
+object Calc{
 
   def oddsratioShred(g_flat: RDD[(String, (Int, Long))], c_flat: RDD[(String, String)]): RDD[(Long, List[(String, Double)])] = {
     g_flat.join(c_flat).map{
@@ -79,6 +81,36 @@ object Calc extends Serializable{
           }
         }
     }
+  
+  def annotate(v: ((Int, (VariantContext, Row)), Long)) = v match {
+    case ((dbsnp, (variant, annot)), id) => {
+      val genos = variant.getGenotypesOrderedByName.flatMap{
+        geno => geno.getGenotypeString.split("/").map{
+            g => ((variant.getContig, variant.getStart,
+                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0),
+                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, g),
+                  (geno.getSampleName, Utils.reportGenotypeType(geno), id))
+            }
+        }
+      val annots = try {
+            Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences"))
+        }catch{
+            case e:Exception => try {
+                 Utils.parseAnnotFlat(variant, 
+                    annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
+            }catch{
+                case e: Exception =>  try{
+                  Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
+                }catch{
+                    case e: Exception =>
+                        Utils.parseAnnotFlat(variant, Seq[org.apache.spark.sql.Row]())
+                }
+            }
+        }
+      //annots
+      (genos, annots)
+    }
+  }   
 
 }
 

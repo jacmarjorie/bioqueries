@@ -1,5 +1,6 @@
 package cs.ox.ac.uk.shred.test.converge
 
+
 import org.apache.spark.rdd.RDD
 import collection.JavaConversions._
 import htsjdk.variant.variantcontext.VariantContext
@@ -43,7 +44,7 @@ object Query4{
                 case _ => (s, "overweight")
              }
            }
-    val mddodds = Calc.oddsratio(genotypes, mdd)
+    /***val mddodds = Calc.oddsratio(genotypes, mdd)
     val bmiodds = Calc.oddsratio(genotypes, bmi)
     val result = mddodds.join(bmiodds)
     result.count
@@ -59,7 +60,7 @@ object Query4{
 
     printer.println(label+",q1_flat,"+region+","+end)
     printer.flush
-    printer2.flush
+    printer2.flush**/
   }
 
   def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row]): Unit = {
@@ -85,7 +86,7 @@ object Query4{
                 case _ => (s, "0.0")
              }
            }    
-    val mddodds = Calc.oddsratioShred(g_flat, mdd)
+    /**val mddodds = Calc.oddsratioShred(g_flat, mdd)
     val bmiodds = Calc.oddsratioShred(g_flat, bmi)
     val results = mddodds.join(bmiodds)
     results.count
@@ -116,7 +117,7 @@ object Query4{
       printer2.println(p4)
     }
     printer.flush
-    printer2.flush
+    printer2.flush**/
   }
 
   def close(): Unit = {

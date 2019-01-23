@@ -27,7 +27,7 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val repartition = 104
+    val repartition = 52
     val conf = new SparkConf()
                 .setMaster(argsList(0))
                 .setAppName("GDBShred")
@@ -55,10 +55,10 @@ object App{
     val clinic = jdbcDF.where("iscase is not null")
     
     val clincBroadcast = spark.sparkContext.broadcast(jdbcDF.where("iscase is not null")) 
-    val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")   
+    @transient val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")   
  
     val query_regions = List(
-      List(("10", 1, 200000)), //734
+      List(("10", 1, 200000))/**, //734
       List(("10", 1, 500000)), //3667
       List(("10", 1, 800000)), //7387
       List(("10", 1, 1000000)), //9031
@@ -66,26 +66,43 @@ object App{
       List(("10", 1, 1500000)), //14143
       List(("10", 1, 2000000)), //19927
       List(("10", 1, 5000000)), //50895
-      List(("10", 1, 10000000))
+      List(("10", 1, 8000000)),
+      List(("10", 1, 10000000))**/
       //List(("10", 1, 135534747))
     )
-   
+    
+    if(queries contains "save"){
+      for(region <- query_regions){
+        val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
+        variants.cache
+        val c = variants.count 
+        val (v_flat, v_dict) = Utils.shredSave(variants)
+        v_flat.saveAsTextFile("hdfs://hadoop-master:9000/variants/vflat_"+c.toString)
+        v_dict.saveAsTextFile("hdfs://hadoop-master:9000/variants/vdict_"+c.toString)
+     }
+    }  
+ 
     if(queries contains "1"){
       // group by binary variable
       val q1 = Query1
       for(region <- query_regions){
       
         val variants = gdb.queryByRegion(samples, region, false).map(x => x._2).repartition(repartition)
+        variants.cache
         val c = variants.count 
-      
+        //val v_flat = spark.sparkContext.textFile("file:///mnt/app_hdd/scratch/flint-spark/vflat_1468").map(_.replace("(", "").replace(")", "").split(",")).map(r => (r(0).toLong, (r(1).toInt, r(2).toInt)))
+        //val v_dict = spark.sparkContext.textFile("file:///mnt/app_hdd/scratch/flint-spark/vdict_1468")     
+ 
         if(queries contains "flat"){
           for(i <- 1 to 1){
             q1.testFlat(c, variants, clinic)
+            variants.unpersist()
           }
         }
         if(queries contains "shred"){
           for(i <- 1 to 1){
             q1.testShred(c, variants, clinic)
+            variants.unpersist()
           }
         }
       }
