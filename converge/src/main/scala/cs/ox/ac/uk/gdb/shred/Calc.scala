@@ -82,35 +82,34 @@ object Calc{
         }
     }
   
-  def annotate(v: ((Int, (VariantContext, Row)), Long)) = v match {
-    case ((dbsnp, (variant, annot)), id) => {
-      val genos = variant.getGenotypesOrderedByName.flatMap{
-        geno => geno.getGenotypeString.split("/").map{
-            g => ((variant.getContig, variant.getStart,
+  def annotate(v: (Int, (VariantContext, Map[String,List[Map[String, String]]]))) = v match {
+    case (dbsnp, (variant, annot)) => {
+        variant.getGenotypesOrderedByName.map{ geno =>
+            val a = try {
+                    Utils.parseAnnotFlat(variant, annot("transcript_consequences"))
+                }catch{
+                    case e:Exception => try {
+                        Utils.parseAnnotFlat(variant,
+                         annot("regulatory_feature_consequences"))
+                    }catch{
+                        case e: Exception =>  try{
+                            Utils.parseAnnotFlat(variant, annot("intergenic_consequences"))
+                        }catch{
+                            case e: Exception =>
+                                Utils.parseAnnotFlat(variant, List[Map[String,String]]())
+                            }
+                        }
+                    }
+            geno.getGenotypeString.split("/").map{ g =>
+                val g2 = ((variant.getContig, variant.getStart,
                   variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0),
                   variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, g),
-                  (geno.getSampleName, Utils.reportGenotypeType(geno), id))
+                  (geno.getSampleName, Utils.reportGenotypeType(geno)))
+                (g2._1, g2._2, a.filter{ case (id, _) => id == g2._1})
             }
         }
-      val annots = try {
-            Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences"))
-        }catch{
-            case e:Exception => try {
-                 Utils.parseAnnotFlat(variant, 
-                    annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
-            }catch{
-                case e: Exception =>  try{
-                  Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
-                }catch{
-                    case e: Exception =>
-                        Utils.parseAnnotFlat(variant, Seq[org.apache.spark.sql.Row]())
-                }
-            }
-        }
-      //annots
-      (genos, annots)
-    }
-  }   
+    }   
+  }
 
 }
 

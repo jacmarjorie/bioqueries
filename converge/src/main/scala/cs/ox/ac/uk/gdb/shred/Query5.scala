@@ -31,43 +31,18 @@ object Query5{
     }
   }
 
-  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
+  def testFlat(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, Map[String,List[Map[String,String]]])]): Unit = {
     
     val data = vs.map{ case v =>
                                 ((v.getContig, v.getStart), v)
                 }.join(snps).map{
                       case ((contig, start), (v, dbsnp)) => (dbsnp, v)
-                }.join(annots)
+                }.leftOuterJoin(annots)
     data.count
-    val genos = data.flatMap{ case ((dbsnp, (variant, annot))) => {
-      variant.getGenotypesOrderedByName.flatMap{
-        geno => geno.getGenotypeString.split("/").map{
-            g => ((variant.getContig, variant.getStart,
-                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0),
-                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, g),
-                  (geno.getSampleName, Utils.reportGenotypeType(geno)))
-            }
-        }
-    }}
-
-    val annot_flat = data.flatMap{ case (dbsnp, (variant, annot)) => 
-      try {
-        Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("transcript_consequences"))
-      }catch{
-        case e:Exception => try {
-             Utils.parseAnnotFlat(variant,
-                annot.getAs[Seq[org.apache.spark.sql.Row]]("regulatory_feature_consequences"))
-        }catch{
-            case e: Exception =>  try{
-              Utils.parseAnnotFlat(variant, annot.getAs[Seq[org.apache.spark.sql.Row]]("intergenic_consequences"))
-            }catch{
-                case e: Exception =>
-                    Utils.parseAnnotFlat(variant, Seq[org.apache.spark.sql.Row]())
-            }
-        }
-      }
+    val result = data.map{    
+      case (dbsnp, (variant, annot)) => 
+        Calc.annotate((dbsnp, (variant, annot.getOrElse(Map[String,List[Map[String,String]]]())))) 
     }
-    val result = genos.join(annot_flat)
     result.count
     result.take(2)
     /**var start = System.currentTimeMillis()  
@@ -152,7 +127,7 @@ object Query5{
       printer2.flush**/
   }
   
-  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, org.apache.spark.sql.Row)]): Unit = {
+  def testShred(region: Long, vs: RDD[VariantContext], clin: Dataset[Row], snps: RDD[((String, Int), Int)], annots: RDD[(Int, Map[String,List[Map[String,String]]])]): Unit = {
     
     val data = vs.map{ case v => // 114
                                 ((v.getContig, v.getStart), v)
@@ -162,6 +137,7 @@ object Query5{
     data.count
     var start = System.currentTimeMillis()
 
+  /**
     // shred variant data
     val lbl = data.zipWithUniqueId
     val v_flat = lbl.map{
@@ -264,7 +240,7 @@ object Query5{
     printer.println(label+",q5_shred_unshred,"+region+","+end3)
     printer.println(label+",q5_shred_total,"+region+","+end)
     printer.flush
-    printer2.flush
+    printer2.flush**/
   }
 
   def close(): Unit = {

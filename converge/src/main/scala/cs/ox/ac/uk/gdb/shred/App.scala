@@ -27,7 +27,7 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val repartition = 52
+    val repartition = 72
     val conf = new SparkConf()
                 .setMaster(argsList(0))
                 .setAppName("GDBShred")
@@ -55,19 +55,19 @@ object App{
     val clinic = jdbcDF.where("iscase is not null")
     
     val clincBroadcast = spark.sparkContext.broadcast(jdbcDF.where("iscase is not null")) 
-    @transient val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")   
+    val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")   
  
     val query_regions = List(
-      List(("10", 1, 200000))/**, //734
-      List(("10", 1, 500000)), //3667
-      List(("10", 1, 800000)), //7387
+      List(("10", 1, 200000)), //734
+      //List(("10", 1, 500000)), //3667
+      //List(("10", 1, 800000)), //7387
       List(("10", 1, 1000000)), //9031
-      List(("10", 1, 1200000)), //11004
-      List(("10", 1, 1500000)), //14143
-      List(("10", 1, 2000000)), //19927
-      List(("10", 1, 5000000)), //50895
-      List(("10", 1, 8000000)),
-      List(("10", 1, 10000000))**/
+      //List(("10", 1, 1200000)), //11004
+      //List(("10", 1, 1500000)), //14143
+      List(("10", 1, 2000000))//, //19927
+      //List(("10", 1, 5000000)), //50895
+      //List(("10", 1, 8000000)),
+      //List(("10", 1, 10000000))**/
       //List(("10", 1, 135534747))
     )
     
@@ -197,8 +197,12 @@ object App{
         val snps = gdbmap.query(s).rdd.map{
                     case row => (row.getString(1), row.getInt(2)+1) -> row.getInt(0)
                   }
-        val annots = annotations.makeRequest(snps).map(r => 
-                      (Integer.parseInt(r.getAs[String]("id").replace("rs", "")), r))
+
+        val annots = snps.mapPartitions{ partition => {
+          val annotations = AnnotationHelper(spark, "http://rest.ensembl.org", "/vep/human/id")
+          annotations.makeRequest(partition.toList).map{ a => 
+            (Integer.parseInt(a("id").asInstanceOf[String].replace("rs", "")), a)}.iterator
+        }}
 
         if(queries contains "flat"){
           for(i <- 1 to 1){

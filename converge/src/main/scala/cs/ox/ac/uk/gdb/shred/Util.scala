@@ -60,38 +60,36 @@ object Utils extends Serializable{
       (flat,dict)
     }
 
-  def parseAnnot(aid: Long, conseq: org.apache.spark.sql.Row) = {
-    conseq.getAs[Seq[String]]("consequence_terms").map{
-      c => ((aid, conseq.getAs[String]("variant_allele")),
+  def parseAnnot(aid: Long, conseq: Map[String,String]) = {
+    conseq("consequence_terms").asInstanceOf[List[String]].map{
+      c => ((aid, conseq("variant_allele")),
         (c,
-        conseq.getAs[String]("biotype"),
-        conseq.getAs[String]("impact"),
-        conseq.getAs[String]("gene_id"),
-        conseq.getAs[String]("hgnc_id"),
-        conseq.getAs[String]("transcript_id"),
-        conseq.getAs[String]("gene_symbol"))
+        conseq("biotype"),
+        conseq("impact"),
+        conseq("gene_id"),
+        conseq("hgnc_id"),
+        conseq("transcript_id"),
+        conseq("gene_symbol"))
       )
     }
   }
 
-  def parseAnnotFlat(variant: VariantContext, annot: Seq[org.apache.spark.sql.Row]) = {
+  def parseAnnotFlat(variant: VariantContext, annot: List[Map[String,String]]) = {
     annot.flatMap{
-      conseq => {
-        conseq.getAs[Seq[String]]("consequence_terms").map{
-          c => ((variant.getContig, variant.getStart, 
-                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0), 
-                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList, 
-                  conseq.getAs[String]("variant_allele")),
-                  (c,
-                   conseq.getAs[String]("biotype"),
-                   conseq.getAs[String]("impact"),
-                   conseq.getAs[String]("gene_id"),
-                   conseq.getAs[String]("hgnc_id"),
-                   conseq.getAs[String]("transcript_id"),
-                   conseq.getAs[String]("gene_symbol")))
+        conseq => conseq("consequence_terms").asInstanceOf[List[String]].map{
+          c => ((variant.getContig, variant.getStart,
+                  variant.getAlleles.filter(_.isReference).map(_.getBaseString).toList(0),
+                  variant.getAlleles.filter(!_.isReference).map(_.getBaseString).toList,
+                  conseq("variant_allele")),
+              (c,
+               conseq("biotype"),
+               conseq("impact"),
+               conseq("gene_id"),
+               conseq("hgnc_id"),
+               conseq("transcript_id"),
+               conseq("gene_symbol")))
             }
           }
         }
-    }
 }
 

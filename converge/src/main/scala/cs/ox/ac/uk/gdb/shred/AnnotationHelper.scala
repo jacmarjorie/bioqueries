@@ -17,15 +17,14 @@ class AnnotationHelper(spark_session: SparkSession, server: String, ext: String)
     import spark_session.implicits._
     val url = new URL(server + ext)
     
-    def makeRequest(snps: RDD[((String, Int), Int)]) = {
-      val requestGroups = snps.map(s => "\"rs"+s._2+"\"").collect.toList.grouped(200)
+    def makeRequest(snps: List[((String, Int), Int)]) = {
+      val requestGroups = snps.map(s => "\"rs"+s._2+"\"").grouped(200)
       requestGroups.map(grp =>  
-                  getAnnotations("{ \"ids\": ["+grp.mkString(",")+" ] }").rdd).reduce(_ union _)
-                      //.map( annot => 
-                      //Integer.parseInt(annot.getString(4).replace("rs", "")) -> annot)).reduce(_ union _)
+                  getAnnotations("{ \"ids\": ["+grp.mkString(",")+" ] }"))
+                    .reduce(_ union _)(0).asInstanceOf[List[Map[String,List[Map[String,String]]]]]
     }
     
-    def getAnnotations(postBody: String): DataFrame = {
+    def getAnnotations(postBody: String): List[Any] = {
         val connection = url.openConnection()
         val httpConnection = connection.asInstanceOf[HttpURLConnection]
         
@@ -56,9 +55,7 @@ class AnnotationHelper(spark_session: SparkSession, server: String, ext: String)
         }
         
         val responseText = new java.util.Scanner(connection.getInputStream, "UTF-8").useDelimiter("\\A").next()
-
-        val responseRDD = spark_session.sparkContext.makeRDD(responseText :: Nil)
-        spark_session.read.json(responseRDD)
+        JSON.parseFull(responseText).toList
     }
 }
 
