@@ -6,6 +6,10 @@ package cs.ox.ac.uk.shred.test.xmark
   */
 
 import scala.xml._
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.SparkSession
+import collection.JavaConversions._
+import collection.JavaConverters._
 
 object App{
 
@@ -13,8 +17,9 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val repartition = 72
-    val xpath = "/nfs/home/jaclyns/xmark/test"
+    val tlrecords = 1
+    val parts = 72
+    val xpath = "/mnt/app_hdd/scratch/xmark/test"
     val conf = new SparkConf()
                 .setMaster(argsList(0))
                 .setAppName("XMarkShred")
@@ -23,27 +28,38 @@ object App{
                   .config(conf)
                   .getOrCreate()
 
-    val tests = List.fill(argsList(0))(xpath).zipWithIndex.map{case (xp, i) => xp+i+".xml"}   
+    val inc = List(1, 10, 25, 50, 100)
+    val tests = inc.map{case i => xpath+i+".xml"}   
 
     if(queries contains "8"){
 
       val x8 = XMark8
 
       for(test <- tests){
+        val label = test.split("/").last.replace(".xml", "")
+        val auctions = spark.sparkContext.parallelize(List.fill(tlrecords)(XReader.read(test)))        
+        auctions.count
+
         if(queries contains "flat"){
+          println("executing "+label+" test")
           for(i <- 1 to 1){
-            x8.testFlat(c, variants, clinic)
+            x8.flat(auctions, label)
           }
         }
 
         if(queries contains "shred"){
           for(i <- 1 to 1){
-            q1.testShred(c, variants, clinic)
+            x8.shred(auctions, label)
           }
         }
-      }
+        
+        if(queries contains "shredopt"){
+          for(i <- 1 to 1){
+            x8.shredOpt(auctions, label)
+          }
+        }
 
-      q1.close()
+      }
     }
 
   }

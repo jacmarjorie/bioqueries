@@ -1,4 +1,4 @@
-pacakge cs.ox.ac.uk.shred.test.xmark
+package cs.ox.ac.uk.shred.test.xmark
 
 /**
   * Query 8 from XMark
@@ -10,6 +10,9 @@ pacakge cs.ox.ac.uk.shred.test.xmark
   * return <item person="{$p/name/text()}">{count($a)}</item>
   *
   */
+
+import java.io._
+import org.apache.spark.rdd.RDD
 
 object XMark8 extends XTypes {
 
@@ -114,7 +117,7 @@ object XMark8 extends XTypes {
 
     val (aflat, p1, c1, r1) = XReader.shred(a1)
     val b2 = p1.flatMap{
-      case (l, (a, p)) => p.map{
+      case (l, p) => p.map{
         case (pid, pname) => ((pid,l), pname)
       }
     }
@@ -122,7 +125,7 @@ object XMark8 extends XTypes {
     val p1_flat = b2
 
     val c1_flat = c1.flatMap{
-        case (l, (a, c)) => c.map{ 
+        case (l, c) => c.map{ 
           case (buyer, seller, item) => ((buyer,l), (seller, item))
         }
       }

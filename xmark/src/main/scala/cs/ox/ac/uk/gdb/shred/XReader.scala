@@ -1,4 +1,4 @@
-import scala.xml._
+package cs.ox.ac.uk.shred.test.xmark
 
 /**
   * Site: Bag(people: Bag(id: String, name: String, ...), 
@@ -7,19 +7,14 @@ import scala.xml._
   *      europe: Bag( item: String, location: String, name: String, ...), ...) ...)
   */
 
+import scala.xml._
 import org.apache.spark.rdd.RDD
-
-trait XTypes {
-  type people = List[(String, String)]
-  type closed = List[(String, String, String)]
-  type region = List[(String, String, String)]
-  type site = (people, closed, List[(region, region)])
-}
-
 
 object XReader extends XTypes{
   
-  def read(xfile: String, val n: Int = 1, val p: Int = 48): RDD[site] = {
+  // n = number of top level records
+  // p = number of partitions
+  def read(xfile: String): site = {
     val x = XML.loadFile(xfile)
     val africa = (x \ "regions" \ "europe" \ "item").map{ i =>
       ((i \ "@id").text, (i \ "location").text, (i \ "name").text) 
@@ -37,10 +32,10 @@ object XReader extends XTypes{
       ((c \ "seller" \ "@person").text, (c \ "buyer" \ "@person").text, (c \ "itemref" \ "@item").text)
     }.toList
   
-    sc.parallelize(List.fill(n)((people, closed_auctions, List((africa, europe)))), p)
+    (people, closed_auctions, List((africa, europe)))
   }
 
-  def shred(auctions: RDD[site]) = { 
+  def shred(a1: RDD[site]) = { 
 
     // auction flat 
     val lbl = a1.zipWithUniqueId
@@ -53,6 +48,5 @@ object XReader extends XTypes{
     val r1 = lbl.map{case ((p, c, r), l) => (l, r)} // ( l0 -> auction.regions, (l1, l1) ) 
     (aflat, p1, c1, r1)
   }
-
 
 }
