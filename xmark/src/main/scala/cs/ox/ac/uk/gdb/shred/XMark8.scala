@@ -60,10 +60,10 @@ object XMark8 extends XTypes {
   }
 
   // shred query - no optimizations
-  def shred(a1: RDD[site], test: String) = {
+  def shred(xr: XReader, a1: RDD[site], test: String) = {
 
     var start = System.currentTimeMillis()
-    val (aflat, p1, c1, r1) = XReader.shred(a1)
+    val (aflat, p1, c1, r1) = xr.shred(a1)
     var shredt = System.currentTimeMillis() - start
 
     var start1 = System.currentTimeMillis()
@@ -72,15 +72,11 @@ object XMark8 extends XTypes {
         case (pid, pname) => ((pid,l), pname)
       }
     }
-    b2.count
+    //b2.count
     var shredb2 = System.currentTimeMillis() - start1
     
     var start2 = System.currentTimeMillis()
-    val p1_flat = aflat.join(p1).flatMap{
-      case (l, (a, p)) => p.map{
-        case (pid, pname) => ((pid, l), pname)
-      }
-    }
+    val p1_flat = b2
 
     val c1_flat = aflat.join(c1).flatMap{
         case (l, (a, c)) => c.map{ 
@@ -104,19 +100,19 @@ object XMark8 extends XTypes {
     result.count
     var unshred = System.currentTimeMillis() - start3
     printer.println("shred_shred"+test+","+shredt)
-    printer.println("shred_flatq"+test+","+shredb2)
+    //printer.println("shred_flatq"+test+","+shredb2)
     printer.println("shred_shredq"+test+","+shredq)
-    printer.println("shred_shredq_total"+test+","+(shredb2+shredq))
+    //printer.println("shred_shredq_total"+test+","+shredb2+shredq))
     printer.println("shred_unshred"+test+","+unshred)
     printer.flush
   }
 
   // shred with optimizations
   // top level join not needed 
-  def shredOpt(a1: RDD[site], test: String) = {
+  def shredOpt(xr: XReader, a1: RDD[site], test: String) = {
 
     var start = System.currentTimeMillis()
-    val (aflat, p1, c1, r1) = XReader.shred(a1)
+    val (aflat, p1, c1, r1) = xr.shred(a1)
     var shredt = System.currentTimeMillis() - start
 
     var start1 = System.currentTimeMillis()
@@ -125,7 +121,7 @@ object XMark8 extends XTypes {
         case (pid, pname) => ((pid,l), pname)
       }
     }
-    b2.count
+    //b2.count
     var shredb2 = System.currentTimeMillis() - start
     
     var start2 = System.currentTimeMillis()
@@ -143,7 +139,7 @@ object XMark8 extends XTypes {
           case ((cnt1), (cnt2)) => (cnt1 + cnt2)
         }
     du.count
-    var shredq = System.currentTimeMillis() - start2    
+    var shredqt = System.currentTimeMillis() - start2    
    
     // unshred
     var start3 = System.currentTimeMillis() 
@@ -153,9 +149,9 @@ object XMark8 extends XTypes {
     shredq.count
     var unshred = System.currentTimeMillis() - start3
     printer.println("shredOpt_shred"+test+","+shredt)
-    printer.println("shredOpt_flatq"+test+","+shredb2)
-    printer.println("shredOpt_shredq"+test+","+shredq)
-    printer.println("shredOpt_shredq_total"+test+","+(shredb2+shredq))
+    //printer.println("shredOpt_flatq"+test+","+shredb2)
+    printer.println("shredOpt_shredq"+test+","+shredqt)
+    //printer.println("shredOpt_shredq_total"+test+","+(shredb2+shredqt))
     printer.println("shredOpt_unshred"+test+","+unshred)
     printer.flush
   }

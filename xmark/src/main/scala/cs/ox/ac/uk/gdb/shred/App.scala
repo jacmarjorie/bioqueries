@@ -17,7 +17,7 @@ object App{
 
     val argsList = args.toList
     val queries = argsList.tail
-    val tlrecords = 1
+    val tlrecords = 100
     val parts = 72
     val xpath = "/mnt/app_hdd/scratch/xmark/test"
     val conf = new SparkConf()
@@ -37,7 +37,9 @@ object App{
 
       for(test <- tests){
         val label = test.split("/").last.replace(".xml", "")
-        val auctions = spark.sparkContext.parallelize(List.fill(tlrecords)(XReader.read(test)))        
+        val xreader = new XReader(spark.sparkContext, test, parts)
+        val auctions = xreader.auctions    
+        auctions.cache
         auctions.count
 
         if(queries contains "flat"){
@@ -49,13 +51,13 @@ object App{
 
         if(queries contains "shred"){
           for(i <- 1 to 1){
-            x8.shred(auctions, label)
+            x8.shred(xreader, auctions, label)
           }
         }
         
         if(queries contains "shredopt"){
           for(i <- 1 to 1){
-            x8.shredOpt(auctions, label)
+            x8.shredOpt(xreader, auctions, label)
           }
         }
 

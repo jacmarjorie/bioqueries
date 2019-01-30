@@ -7,33 +7,65 @@ package cs.ox.ac.uk.shred.test.xmark
   *      europe: Bag( item: String, location: String, name: String, ...), ...) ...)
   */
 
-import scala.xml._
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SQLContext
+import com.databricks.spark.xml._
 import org.apache.spark.rdd.RDD
+import scala.xml._
+import org.apache.spark.sql.types.{StructType, StructField, StringType}
 
-object XReader extends XTypes{
+class XReader(sc: SparkContext, xfile: String, partitions: Int) extends XTypes{
   
-  // n = number of top level records
-  // p = number of partitions
-  def read(xfile: String): site = {
-    val x = XML.loadFile(xfile)
-    val africa = (x \ "regions" \ "europe" \ "item").map{ i =>
-      ((i \ "@id").text, (i \ "location").text, (i \ "name").text) 
-    }.toList
+  val sqlContext = new SQLContext(sc)
+  import sqlContext.implicits._
 
-    val europe = (x \ "regions" \ "europe" \ "item").map{ i =>
-      ((i \ "@id").text, (i \ "location").text, (i \ "name").text) 
-    }.toList
+  val peopleSchema = StructType(Array(
+    StructField("_id", StringType, nullable=true),
+    StructField("name", StringType, nullable=true)))
+  val people = sqlContext.read
+    .format("com.databricks.spark.xml")
+    .option("rootTag", "people")
+    .option("rowTag", "person")
+    .schema(peopleSchema)
+    .load(xfile)
+    .rdd.map{
+      r => (r.getString(0), r.getString(1))
+    }
 
-    val people = (x \ "people" \ "person").map{ p =>
-      ((p \ "@id").text, (p \ "name").text)
-    }.toList
-  
-    val closed_auctions = (x \ "closed_auctions" \ "closed_auction").map{ c =>
-      ((c \ "seller" \ "@person").text, (c \ "buyer" \ "@person").text, (c \ "itemref" \ "@item").text)
-    }.toList
-  
-    (people, closed_auctions, List((africa, europe)))
-  }
+  val closed = sqlContext.read
+    .format("com.databricks.spark.xml")
+    .option("rootTag", "closed_auctions")
+    .option("rowTag", "closed_auction")
+    .load(xfile)
+    .rdd.map{
+      r => (r.getStruct(r.fieldIndex("buyer")).getString(1), 
+        r.getStruct(r.fieldIndex("seller")).getString(1), 
+        r.getStruct(r.fieldIndex("itemref")).getString(1))
+    }
+
+   val europe = sqlContext.read
+    .format("com.databricks.spark.xml")
+    .option("rootTag", "europe")
+    .option("rowTag", "item")
+    .load(xfile).rdd.map{
+      r => (r.getString(r.fieldIndex("_id")), 
+            r.getString(r.fieldIndex("location")), 
+            r.getString(r.fieldIndex("name")))
+    }
+
+   val africa = sqlContext.read
+    .format("com.databricks.spark.xml")
+    .option("rootTag", "africa")
+    .option("rowTag", "item")
+    .load(xfile).rdd.map{
+      r => (r.getString(r.fieldIndex("_id")), 
+            r.getString(r.fieldIndex("location")), 
+            r.getString(r.fieldIndex("name")))
+    }
+
+  val auctions: RDD[site] = sc.parallelize(List((people.collect.toList, 
+                                                closed.collect.toList,
+                                                List((africa.collect.toList, europe.collect.toList)))), partitions)
 
   def shred(a1: RDD[site]) = { 
 
