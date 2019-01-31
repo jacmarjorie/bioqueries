@@ -1,6 +1,6 @@
-### XMark Shred Benchmark 
+## XMark Shred Benchmark 
 
-#### Data Generation
+### Data Generation
 The data used here is generated from the [xmark data generator](https://projects.cwi.nl/xmark/downloads.html) via:
 
 ```
@@ -8,12 +8,6 @@ The data used here is generated from the [xmark data generator](https://projects
 ```
 
 `-f` is the scale factor. `-s` splits the data into even chunks (as done in PaxQuery paper).
-
-#### Data Schema
-
-%md
-
-## XMark Benchmark Synthetic Data
 
 ### Schema
 
