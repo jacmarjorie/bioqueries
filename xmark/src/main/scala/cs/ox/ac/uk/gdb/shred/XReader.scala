@@ -65,7 +65,7 @@ class XReader(sc: SparkContext, xfile: String, partitions: Int) extends XTypes{
 
   val auctions: RDD[site] = sc.parallelize(List((people.collect.toList, 
                                                 closed.collect.toList,
-                                                List((africa.collect.toList, europe.collect.toList)))), partitions)
+                                                List((africa.collect.toList, europe.collect.toList)))))
 
   def shred(a1: RDD[site]) = { 
 
