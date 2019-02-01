@@ -116,6 +116,7 @@ The parser can be found at `src/main/scala/cs/ox/ac/uk/gdb/shred/XReader.scala`.
 
 #### Query 8:
 
+##### Original
 ```
 for site1 in auction 
     for person in site1.people
@@ -125,7 +126,7 @@ for site1 in auction
                                     then sng( person.id ) ) ) )   
 ```
 
-Shredded:
+##### Shredded:
 
 DU is null.
 
