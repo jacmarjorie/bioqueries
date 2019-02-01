@@ -3,8 +3,6 @@
 ### Data Generation
 The data used here is generated from the [xmark data generator](https://projects.cwi.nl/xmark/downloads.html) via:
 
-%md 
-
 ### XMark Data Exploration
 
 The XMark data generator has two flags that can be used to produce data:
@@ -28,20 +26,21 @@ Running the generator without `-s`, the data is a single top level record with n
 * `total size (all files)` is the combined size of all files (this is what `-f` controls)
 * `people and closed sizes` displays the distribution of people and closed_auction counts per site. This would allow us to explore effects of nested bag size; however, there are a lot of zeros.
 
+
 | -f | -s | records | min size | max size | total size (all files) | people and closed sizes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+|---|---|---|---|---|---|---|
 | 1 | 1000 | 70 | .5M | 3 M | 112 M | people: Map(450 -> 1, 1002 -> 25, 0 -> 44), closed: Map(576 -> 1, 156 -> 1, 1002 -> 9, 0 -> 59) |
 | 1 | 2000 | 35 | .9M | 6 M | 112 M | people: Map(1476 -> 1, 2002 -> 12, 0 -> 22), closed: Map(1204 -> 1, 2002 -> 4, 538 -> 1, 0 -> 29) |
 | 1 | 5000 | 15 | 2M | 13 M | 112 M | people: Map(490 -> 1, 5002 -> 5, 0 -> 9), closed: Map(5002 -> 1, 2232 -> 1, 2516 -> 1, 0 -> 12) |
 | 1 | 10000 | 8 | 4M | 26 M | 112 M | people: Map(5496 -> 1, 10002 -> 2, 0 -> 5), closed: Map(7242 -> 1, 2508 -> 1, 0 -> 6) |
 | 1 | 20000 | 5 | 6M | 51 M | 112 M | people: Map(5498 -> 1, 20002 -> 1, 0 -> 3), closed: Map(2504 -> 1, 7246 -> 1, 0 -> 3) | 
 | 1 | 40000 | 3 | 13M | 57 M | 112 M | people: Map(25500 -> 1, 0 -> 2), closed: Map(7248 -> 1, 2502 -> 1, 0 -> 1) | 
-| 10 | 1000 | 690 | .4M | 2.7M | 1.1G |  people: Map(492 -> 1, 1002 -> 254, 0 -> 435), closed: Map(750 -> 1, 558 -> 1, 1002 -> 96, 0 -> 592) | 
-| 10 | 2000 | 346 | .5M | 5M | 1.1G | people: Map(746 -> 1, 2002 -> 127, 0 -> 218), closed: Map(2002 -> 48, 28 -> 1, 1376 -> 1, 0 -> 296) | 
-| 10 | 5000 | 139 | 2M | 13M | 1.1G | people: Map(5002 -> 50, 4900 -> 1, 0 -> 88), closed: Map(5002 -> 19, 150 -> 1, 2312 -> 1, 0 -> 118) | 
-| 10 | 10000 | 70 | 4M | 34M | 1.1G | people: Map(10002 -> 25, 4950 -> 1, 0 -> 44), closed: Map(10002 -> 9, 2406 -> 1, 5076 -> 1, 0 -> 59) | 
-| 10 | 20000 | 35 | 8.5M | 60M | 1.1G | people: Map(14976 -> 1, 20002 -> 12, 0 -> 22), closed: Map(5038 -> 1, 12454 -> 1, 20002 -> 4, 0 -> 29) | 
-| 10 | 40000 | 18 | 18M | 102M | 1.1G | people: Map(40002 -> 6, 14988 -> 1, 0 -> 11), closed: Map(40002 -> 1, 25020 -> 1, 32478 -> 1, 0 -> 15) | 
+| 10 | 1000 | 690 | .4M | 2.7M | 1.1G |  people: Map(492 -> 1, 1002 -> 254, 0 -> 435), closed: Map(750 -> 1, 558 -> 1, 1002 -> 96, 0 -> 592) |
+| 10 | 2000 | 346 | .5M | 5M | 1.1G | people: Map(746 -> 1, 2002 -> 127, 0 -> 218), closed: Map(2002 -> 48, 28 -> 1, 1376 -> 1, 0 -> 296)|
+| 10 | 5000 | 139 | 2M | 13M | 1.1G | people: Map(5002 -> 50, 4900 -> 1, 0 -> 88), closed: Map(5002 -> 19, 150 -> 1, 2312 -> 1, 0 -> 118)| 
+| 10 | 10000 | 70 | 4M | 34M | 1.1G |people: Map(10002 -> 25, 4950 -> 1, 0 -> 44), closed: Map(10002 -> 9, 2406 -> 1, 5076 -> 1, 0 -> 59)| 
+| 10 | 20000 | 35 | 8.5M | 60M | 1.1G | people: Map(14976 -> 1, 20002 -> 12, 0 -> 22), closed: Map(5038 -> 1, 12454 -> 1, 20002 -> 4, 0 -> 29)|
+| 10 | 40000 | 18 | 18M | 102M | 1.1G | people: Map(40002 -> 6, 14988 -> 1, 0 -> 11), closed: Map(40002 -> 1, 25020 -> 1, 32478 -> 1, 0 -> 15) |
 
 
 ### Schema
@@ -156,6 +155,7 @@ Scale factor is `-f` from data generator.
 
 ##### Multisite run
 
-%md
+A quick look at multisite run for scale factors and various split sizes.
+
 ![TL](https://drive.google.com/uc?id=1yqE9S4zL-9hzsXGqCcl-jP4lbo8ypnIX)
 ![NB](https://drive.google.com/uc?id=14Qrhz4Z1CuPQyIFmYsYCm-GhMbhdpC-K)
