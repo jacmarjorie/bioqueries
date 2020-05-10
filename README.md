@@ -1,3 +1,3 @@
-### Genomic Shred Tests
+### Biological Queries
 
-Genomic query examples from initial testing
+This repository contains a suite of example analyses with biological data.
