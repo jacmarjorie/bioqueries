@@ -6,6 +6,7 @@ Here we provide setup instructions for performing gene burden calculation in Spa
 
 First download the required software:
 * Scala (2.11)
+* sbt
 * [Spark](https://spark.apache.org/downloads.html), pre-built for Apache Hadoop 2.7.
 
 ### Data
@@ -15,13 +16,6 @@ Next download some example files:
 * **Phenotype**: Basic phenotype information from 1000 genomes [here](https://www.internationalgenome.org/faq/can-i-get-phenotype-gender-and-family-relationship-information-samples/)
 * **Gene Name**: Gene pathway sets from [GSEA](https://www.gsea-msigdb.org/gsea/downloads.jsp). We want to to start with all canonical pathways, using gene symbols `c2.cp.v7.1.symbols.gmt`. You will need to make a login to access this file, you can do that [here](https://www.gsea-msigdb.org/gsea/register.jsp).
 #* **Gene Map **Gene name to VCF gene code map [here](ftp://ftp.ensembl.org/pub/grch37/release-100/gtf/homo_sapiens/Homo_sapiens.GRCh37.87.chr.gtf.gz)
-
-### Useful Resources
-
-When you are working, you may want to subset the VCF file to make it only a few samples, 
-you can do this with [bcftools](https://bioinformatics.stackexchange.com/questions/3477/how-to-subset-samples-from-a-vcf-file) for more information.
-
-More information on the [VCF file format from 1000 genomes](https://www.internationalgenome.org/wiki/Analysis/vcf4.0/).
 
 ### Next Steps
 
@@ -55,6 +49,17 @@ how would you describe this as a table in a database? What would the types of ea
 
 3. Load this VCF into a Spark/Scala application and calculate the number of mutations that correspond to each gene. 
 
+To help you get started with this, I have created a Spark/Scala starter package in the `burden` folder. Follow these instructions 
+to get started:
+* Clone this repo. 
+* cd `bioqueries/gene_burden/burden`
+* Open build.sbt and update with your scala and spark version  
+* open `src/main/scala/burden/App.scala and change the basepath to the full path location of your VCF file.
+* execute the application with `sbt run`, this will take a while the first time. Eventually it will execute and 
+you will see variant information printed to the screen. Variants are loaded into VariantContext objects. This is 
+part of the htsjdk api. You can find more information [here](https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/variantcontext/VariantContext.html).
+* running this through sbt is probably not the best way to proceed. The better way to run Spark applications is to build an application jar. This will require downloading the relevant dependency jars (as defined in the sbt file), updating your classpath, and then runnign the application jar with spark-submit. I'll leave this as an exercise for you to get familiar with setting up and executing spark applications.
+
 4. What's similar about the NRC query from **2** and the analysis in **3**? What's different? 
 
 #### Integrating more resources: pathway information
@@ -80,4 +85,8 @@ schema: `{(pathway: String, genes: {(name: String, burden: Int)})}`
 
 This will include additional resources and dealing with multi-sample VCFs, such as those described [here](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/). I will update these as we progress with the above.
 
+### Useful Resources
+
+When you are working, you may want to subset the VCF file to make it only a few samples, 
+you can do this with [bcftools](https://bioinformatics.stackexchange.com/questions/3477/how-to-subset-samples-from-a-vcf-file) for more information.
 
