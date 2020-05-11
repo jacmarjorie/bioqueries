@@ -12,7 +12,7 @@ First download the required software:
 ### Data
 
 Next download some example files:
-* **Variants**: Example VCF, from 1000 genomes FTP site [here](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/functional_annotation/annotated_vcfs/ALL.wgs.integrated_phase1_release_v3_coding_annotation.20101123.snps_indels.sites.vcf.gz)
+* **Variants**: Example VCF, `ALL.wgs.integrated_phase1_release_v3_coding_annotation.20101123.snps_indels.sites.vcf.gz` from 1000 genomes FTP site [here](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/functional_annotation/annotated_vcfs/)
 * **Phenotype**: Basic phenotype information from 1000 genomes [here](https://www.internationalgenome.org/faq/can-i-get-phenotype-gender-and-family-relationship-information-samples/)
 * **Gene Name**: Gene pathway sets from [GSEA](https://www.gsea-msigdb.org/gsea/downloads.jsp). We want to to start with all canonical pathways, using gene symbols `c2.cp.v7.1.symbols.gmt`. You will need to make a login to access this file, you can do that [here](https://www.gsea-msigdb.org/gsea/register.jsp).
 
