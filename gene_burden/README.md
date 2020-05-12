@@ -12,10 +12,9 @@ First download the required software:
 ### Data
 
 Next download some example files:
-* **Variants**: Example VCF, from 1000 genomes FTP site [here](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/functional_annotation/annotated_vcfs/ALL.wgs.integrated_phase1_release_v3_coding_annotation.20101123.snps_indels.sites.vcf.gz)
+* **Variants**: Example VCF, from 1000 genomes FTP site ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase1/analysis_results/functional_annotation/annotated_vcfs/ALL.wgs.integrated_phase1_release_v3_coding_annotation.20101123.snps_indels.sites.vcf.gz
 * **Phenotype**: Basic phenotype information from 1000 genomes [here](https://www.internationalgenome.org/faq/can-i-get-phenotype-gender-and-family-relationship-information-samples/)
-* **Gene Name**: Gene pathway sets from [GSEA](https://www.gsea-msigdb.org/gsea/downloads.jsp). We want to to start with all canonical pathways, using gene symbols `c2.cp.v7.1.symbols.gmt`. You will need to make a login to access this file, you can do that [here](https://www.gsea-msigdb.org/gsea/register.jsp).
-#* **Gene Map **Gene name to VCF gene code map [here](ftp://ftp.ensembl.org/pub/grch37/release-100/gtf/homo_sapiens/Homo_sapiens.GRCh37.87.chr.gtf.gz)
+* **Pathways**: Gene pathway sets from [GSEA](https://www.gsea-msigdb.org/gsea/downloads.jsp). We want to to start with all canonical pathways, using gene symbols `c2.cp.v7.1.symbols.gmt`. You will need to make a login to access this file, you can do that [here](https://www.gsea-msigdb.org/gsea/register.jsp).
 
 ### Next Steps
 
@@ -33,11 +32,10 @@ This VCF file already has been tagged with the gene information - it is in the l
 can be found [here](https://www.internationalgenome.org/wiki/Analysis/vcf4.0/). The first several lines 
 marked with `##` are header lines. The VCF starts at the line marked with `#CHROM`. This is tab-delimited 
 information. In the `INFO` column you can see `AL627309.2:ENSG00000249291.2`. This corresponds to a gene 
-idenifier. The information after the period is only to mark various subcategories of this gene, so 
-we should remove this information when doing the gene count so `AL627309.2` should be `AL627309`. 
-The other value `ENSG` is known as an [Ensembl ID](http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000010404;r=X:149476988-149521096). Though you may see these around, we will focus on using the gene name (`AL627309`) as a gene identifier.
+idenifier. Note that you main need to drop the information after the "." in gene name in order for these 
+to match up to the values in the pathway information. The other value `ENSG` is known as an [Ensembl ID](http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000010404;r=X:149476988-149521096). Though you may see these around, we will focus on using the gene name (`AL627309`) as a gene identifier.
 ```
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+#CHROM	POS	ID	      REF	ALT	QUAL	FILTER	INFO
 1	13302	rs180734498	C	T	100	PASS	THETA=0.0048;AN=2184;AC=249;VT=SNP;AA=.;RSQ=0.6281;LDAF=0.1573;SNPSOURCE=LOWCOV;AVGPOST=0.8895;ERATE=0.0058;AF=0.11;ASN_AF=0.02;AMR_AF=0.08;AFR_AF=0.21;EUR_AF=0.14;VA=1:AL627309.2:ENSG00000249291.2:+:synonymous:1/1:AL627309.2-201:ENST00000515242.2:384_225_75_H->H
 ```
 #### Subtasks
@@ -77,7 +75,9 @@ described in **3** and **4** below.
 3. Extend your analysis from above to calculate the total gene burden of each pathway. 
 
 4. Alter this analysis to return a set of pathways with nested gene information, satisfying the following 
-schema: `{(pathway: String, genes: {(name: String, burden: Int)})}`
+schema: 
+
+`{(pathway: String, genes: {(name: String, burden: Int)})}`
 
 5. Perform the analysis in Spark. How do these compare to the NRC queries, how are they different?
 
