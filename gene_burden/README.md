@@ -32,7 +32,8 @@ This VCF file already has been tagged with the gene information - it is in the l
 can be found [here](https://www.internationalgenome.org/wiki/Analysis/vcf4.0/). The first several lines 
 marked with `##` are header lines. The VCF starts at the line marked with `#CHROM`. This is tab-delimited 
 information. In the `INFO` column you can see `AL627309.2:ENSG00000249291.2`. This corresponds to a gene 
-idenifier. The other value `ENSG` is known as an [Ensembl ID](http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000010404;r=X:149476988-149521096). Though you may see these around, we will focus on using the gene name (`AL627309`) as a gene identifier.
+idenifier. Note that you main need to drop the information after the "." in gene name in order for these 
+to match up to the values in the pathway information. The other value `ENSG` is known as an [Ensembl ID](http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000010404;r=X:149476988-149521096). Though you may see these around, we will focus on using the gene name (`AL627309`) as a gene identifier.
 ```
 #CHROM	POS	ID	      REF	ALT	QUAL	FILTER	INFO
 1	13302	rs180734498	C	T	100	PASS	THETA=0.0048;AN=2184;AC=249;VT=SNP;AA=.;RSQ=0.6281;LDAF=0.1573;SNPSOURCE=LOWCOV;AVGPOST=0.8895;ERATE=0.0058;AF=0.11;ASN_AF=0.02;AMR_AF=0.08;AFR_AF=0.21;EUR_AF=0.14;VA=1:AL627309.2:ENSG00000249291.2:+:synonymous:1/1:AL627309.2-201:ENST00000515242.2:384_225_75_H->H
