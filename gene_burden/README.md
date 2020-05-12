@@ -76,7 +76,9 @@ described in **3** and **4** below.
 3. Extend your analysis from above to calculate the total gene burden of each pathway. 
 
 4. Alter this analysis to return a set of pathways with nested gene information, satisfying the following 
-schema: `{(pathway: String, genes: {(name: String, burden: Int)})}`
+schema: 
+
+`{(pathway: String, genes: {(name: String, burden: Int)})}`
 
 5. Perform the analysis in Spark. How do these compare to the NRC queries, how are they different?
 
