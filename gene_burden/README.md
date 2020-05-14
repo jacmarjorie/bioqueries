@@ -1,4 +1,4 @@
-## Gene Burden Example
+# Gene Burden Example
 
 Here we provide setup instructions for performing gene burden calculation in Spark. 
 
