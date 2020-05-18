@@ -8,7 +8,7 @@ import htsjdk.variant.variantcontext.VariantContext
 
 class VariantLoader(spark: SparkSession) extends Serializable {
 
-  val gdbmap = new GDBMapper(spark, Some(customConf))
+  val gdbmap = new GDBMapper(spark)
   val gdb = new GDBConnector(spark, gdbmap, Config.workspace)
 
   def getVariants(samples: List[String], genes: List[String]): RDD[VariantContext] = {
