@@ -20,7 +20,7 @@ class ClinicalLoader(spark: SparkSession) extends Serializable {
     .option("header", true)
     .option("delimiter", ",")
     .csv("/Users/jac/bioqueries/data/1000g.csv")
-    .as[ThousandGenomes]
+    .as[ThousandGenomes].withColumnRenamed("sample", "m_sample")
 
 }
 
