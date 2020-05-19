@@ -5,20 +5,24 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.expressions.scalalang._
 
-case class Record39053ab926fc407e815c45ed2408fad7(g_sample: String, call: Int)
-case class Record762d6dbcdf3d4150916946ce0039acba(reference: String, genotypes: Seq[Record39053ab926fc407e815c45ed2408fad7], alternate: String, variants_index: Long, contig: String, start: Int)
-case class Record228b25e5b1f146adabdd00c72d3a9690(reference: String, genotypes: Seq[Record39053ab926fc407e815c45ed2408fad7], alternate: String, variants_index: Long, contig: String, start: Int, genotypes_index: Long)
-case class Record15d48b3c099f4fbea1fff83fe621c0aa(reference: String, g_sample: Option[String], alternate: String, variants_index: Long, contig: String, start: Int, call: Option[Int], genotypes_index: Long)
-case class Record6729c2d1e4c74d21a772224c6885e19b(population: String, family_id: String, m_sample: String, metadata_index: Long, gender: String)
-case class Record53cb3f32ef444ec68d073621182b7bff(reference: String, g_sample: Option[String], population: Option[String], family_id: Option[String], alternate: String, variants_index: Long, contig: String, m_sample: Option[String], metadata_index: Option[Long], start: Int, call: Option[Int], genotypes_index: Long, gender: Option[String])
-case class Record572d99b2d934401d924f0d3db70b0020(reference: String, altCnt: Int, refCnt: Int, alternate: String, variants_index: Long, contig: String, start: Int, gender: Option[String])
-case class Record186e29925ae8433bad5bd126c84cc85c(reference: String, altCnt: Double, refCnt: Double, alternate: String, variants_index: Long, contig: String, start: Int, gender: Option[String])
-case class Recordd8b1eba210eb4851a8b734abf2f46f85(reference: String, alternate: String, variants_index: Long, contig: String, start: Int, gender: Option[String])
-case class Record1e78f953abae4b798ec02361e1813586(reference: String, alternate: String, variants_index: Long, contig: String, start: Int)
-case class Record64f0caaf5733475fa8ed0b918b7cbbbc(gender: String, refCnt: Double, altCnt: Double)
-case class Record8accad78d9e24741b31178c4f1172985(reference: String, _2: Seq[Record64f0caaf5733475fa8ed0b918b7cbbbc], alternate: String, variants_index: Long, contig: String, start: Int)
-case class Recordde3783cbb2014e939f05985d35315df7(gender: Option[String], refCnt: Double, altCnt: Double)
-case class Recordcebceae21c6145e7b4c4d4ff0841f2ef(reference: String, calls: Seq[Recordde3783cbb2014e939f05985d35315df7], contig: String, alterante: String, start: Int)
+case class Record6b117d219d084a15ad68f36f73a5495c(g_sample: String, call: Int)
+case class Record3e020d5d120f42afba76f3c36f33e76b(reference: String, genotypes: Seq[Record6b117d219d084a15ad68f36f73a5495c], alternate: String, variants_index: Long, contig: String, start: Int)
+case class Record724565d38152420489ffd38c187666b8(reference: String, genotypes: Seq[Record6b117d219d084a15ad68f36f73a5495c], alternate: String, variants_index: Long, contig: String, start: Int, genotypes_index: Long)
+case class Recordc4140665d5e54f1293d316873bec92bf(reference: String, g_sample: Option[String], alternate: String, variants_index: Long, contig: String, start: Int, call: Option[Int], genotypes_index: Long)
+case class Recorde47f1861ff3d40469ad3376ea93fe11b(population: String, family_id: String, m_sample: String, metadata_index: Long, gender: String)
+case class Record30e8c577ae9f4e6d9a697eeb2b5a182f(reference: String, g_sample: Option[String], population: Option[String], family_id: Option[String], alternate: String, variants_index: Long, contig: String, m_sample: Option[String], metadata_index: Option[Long], start: Int, call: Option[Int], genotypes_index: Long, gender: Option[String])
+case class Record14ed2d17c2b442fa972f5c2fab3a5ebe(reference: String, altCnt: Double, refCnt: Double, alternate: String, variants_index: Long, contig: String, start: Int, gender: Option[String])
+case class Recordafe29ffb38944c45a52ec7ec715907a7(reference: String, alternate: String, variants_index: Long, contig: String, start: Int, gender: Option[String])
+case class Record0144fddc9d2848c08f90477906a9a687(reference: String, alternate: String, variants_index: Long, contig: String, start: Int)
+case class Record02d2a101777b4d068d7d5fde3d3d5ca5(gender: String, refCnt: Double, altCnt: Double)
+case class Record46f24ca4404c410bac9901bea863a3a7(reference: String, _2: Seq[Record02d2a101777b4d068d7d5fde3d3d5ca5], alternate: String, variants_index: Long, contig: String, start: Int)
+case class Recordef6ad2d3c2d74f838c1a57de31e8cf2e(reference: String, calls: Seq[Record02d2a101777b4d068d7d5fde3d3d5ca5], alternate: String, contig: String, start: Int)
+case class Recordd1c135db705944e8a1a3165a2727da40(reference: String, calls: Seq[Record02d2a101777b4d068d7d5fde3d3d5ca5], alternate: String, ORStep1_index: Long, contig: String, start: Int)
+case class Recordf3dcde1a3ed243779e80476f20c16289(reference: String, altCnt: Double, refCnt: Double, alternate: String, ORStep1_index: Long, contig: String, start: Int, gender: String)
+case class Recordb54acab0b9d949d8a65e428c7a4c95c3(reference: String, maleRatio: Double, alternate: String, femaleRatio: Double, contig: String, start: Int)
+case class Record8a97562c78a64878b42c891fc590eae3(contig: String, start: Int, reference: String, alternate: String)
+case class Record0878c9d94fb24feca494630c8fcc53fe(reference: String, maleRatio: Double, alternate: String, femaleRatio: Double, contig: String, start: Int, ORStep2_index: Long)
+case class Record8925464e5ac642f2a363391f040e6c69(reference: String, odds: Double, alternate: String, contig: String, start: Int)
 
 object App {
   def main(args: Array[String]){
@@ -38,54 +42,85 @@ object App {
     val cloader = new ClinicalLoader(spark)
     val metadata = cloader.tgenomes
 
- val x21 = variants.withColumn("variants_index", monotonically_increasing_id())
- .as[Record762d6dbcdf3d4150916946ce0039acba]
+ val x36 = variants.withColumn("variants_index", monotonically_increasing_id())
+ .as[Record3e020d5d120f42afba76f3c36f33e76b]
  
-val x23 = x21 
-val x24 = x23.withColumn("genotypes_index", monotonically_increasing_id())
- .as[Record228b25e5b1f146adabdd00c72d3a9690]
+val x38 = x36 
+val x39 = x38.withColumn("genotypes_index", monotonically_increasing_id())
+ .as[Record724565d38152420489ffd38c187666b8]
  
-val x27 = x24.flatMap{
- case x25 => if (x25.genotypes.isEmpty) Seq(Record15d48b3c099f4fbea1fff83fe621c0aa(x25.reference, None, x25.alternate, x25.variants_index, x25.contig, x25.start, None, x25.genotypes_index))
-   else x25.genotypes.map( x26 => Record15d48b3c099f4fbea1fff83fe621c0aa(x25.reference, Some(x26.g_sample), x25.alternate, x25.variants_index, x25.contig, x25.start, Some(x26.call), x25.genotypes_index) )
-}.as[Record15d48b3c099f4fbea1fff83fe621c0aa]
+val x42 = x39.flatMap{
+ case x40 => if (x40.genotypes.isEmpty) Seq(Recordc4140665d5e54f1293d316873bec92bf(x40.reference, None, x40.alternate, x40.variants_index, x40.contig, x40.start, None, x40.genotypes_index))
+   else x40.genotypes.map( x41 => Recordc4140665d5e54f1293d316873bec92bf(x40.reference, Some(x41.g_sample), x40.alternate, x40.variants_index, x40.contig, x40.start, Some(x41.call), x40.genotypes_index) )
+}.as[Recordc4140665d5e54f1293d316873bec92bf]
  
-val x28 = metadata.withColumn("metadata_index", monotonically_increasing_id())
- .as[Record6729c2d1e4c74d21a772224c6885e19b]
+val x43 = metadata.withColumn("metadata_index", monotonically_increasing_id())
+ .as[Recorde47f1861ff3d40469ad3376ea93fe11b]
  
-val x31 = x27.join(x28, 
- col("g_sample") === col("m_sample"), "left_outer").as[Record53cb3f32ef444ec68d073621182b7bff]
+val x46 = x42.join(x43, 
+ col("g_sample") === col("m_sample"), "left_outer").as[Record30e8c577ae9f4e6d9a697eeb2b5a182f]
  
-val x33 = x31.withColumn("altCnt", when(col("call") === 1, 1).otherwise(when(col("call") === 2, 2).otherwise(0)))
-.withColumn("refCnt", when(col("call") === 1, 1).otherwise(when(col("call") === 2, 0).otherwise(2))).as[Record572d99b2d934401d924f0d3db70b0020]
+val x48 = x46.withColumn("altCnt", when(col("call") === 1, 1.0).otherwise(when(col("call") === 2, 2.0).otherwise(0.0)))
+.withColumn("refCnt", when(col("call") === 1, 1.0).otherwise(when(col("call") === 2, 0.0).otherwise(2.0))).as[Record14ed2d17c2b442fa972f5c2fab3a5ebe]
  
-val x35 = x33.groupByKey(x34 => Recordd8b1eba210eb4851a8b734abf2f46f85(x34.reference, x34.alternate, x34.variants_index, x34.contig, x34.start, x34.gender))
- .agg(typed.sum[Record572d99b2d934401d924f0d3db70b0020](x34 => x34.refCnt)
-,typed.sum[Record572d99b2d934401d924f0d3db70b0020](x34 => x34.altCnt)
-).mapPartitions{ it => it.map{ case (key, refCnt,altCnt) =>
-   Record186e29925ae8433bad5bd126c84cc85c(key.reference,altCnt,refCnt,key.alternate,key.variants_index,key.contig,key.start,key.gender)
-}}.as[Record186e29925ae8433bad5bd126c84cc85c]
+val x50 = x48.groupByKey(x49 => Recordafe29ffb38944c45a52ec7ec715907a7(x49.reference, x49.alternate, x49.variants_index, x49.contig, x49.start, x49.gender))
+ .agg(typed.sum[Record14ed2d17c2b442fa972f5c2fab3a5ebe](x49 => x49.refCnt)
+,typed.sum[Record14ed2d17c2b442fa972f5c2fab3a5ebe](x49 => x49.altCnt)
+).mapPartitions{ it => it.map{ case (key, refCnt, altCnt) =>
+   Record14ed2d17c2b442fa972f5c2fab3a5ebe(key.reference, altCnt, refCnt, key.alternate, key.variants_index, key.contig, key.start, key.gender)
+}}.as[Record14ed2d17c2b442fa972f5c2fab3a5ebe]
  
-val x37 = x35.groupByKey(x36 => Record1e78f953abae4b798ec02361e1813586(x36.reference, x36.alternate, x36.variants_index, x36.contig, x36.start)).mapGroups{
+val x52 = x50.groupByKey(x51 => Record0144fddc9d2848c08f90477906a9a687(x51.reference, x51.alternate, x51.variants_index, x51.contig, x51.start)).mapGroups{
  case (key, value) => 
-   val grp = value.flatMap(x36 => 
-    x36.gender match {
+   val grp = value.flatMap(x51 => 
+    x51.gender match {
       case None => Seq()
-      case _ => Seq(Record64f0caaf5733475fa8ed0b918b7cbbbc(x36.gender.get, x36.refCnt, x36.altCnt))
+      case _ => Seq(Record02d2a101777b4d068d7d5fde3d3d5ca5(x51.gender.get, x51.refCnt, x51.altCnt))
    }).toSeq
-   Record8accad78d9e24741b31178c4f1172985(key.reference, grp, key.alternate, key.variants_index, key.contig, key.start)
- }.as[Record8accad78d9e24741b31178c4f1172985]
+   Record46f24ca4404c410bac9901bea863a3a7(key.reference, grp, key.alternate, key.variants_index, key.contig, key.start)
+ }.as[Record46f24ca4404c410bac9901bea863a3a7]
  
-val x39 = x37
-// .withColumn("calls", x10._2)
-// .withColumn("alterante", x10.alternate).as[Recordcebceae21c6145e7b4c4d4ff0841f2ef]
+val x54 = x52.withColumnRenamed("_2", "calls").as[Recordef6ad2d3c2d74f838c1a57de31e8cf2e]
  
-val x40 = x39
-val OddsRatio = x40
+val x55 = x54
+val ORStep1 = x55
+//ORStep1.print
+//ORStep1.cache
+//ORStep1.count
+val x56 = ORStep1.withColumn("ORStep1_index", monotonically_increasing_id())
+ .as[Recordd1c135db705944e8a1a3165a2727da40]
+ 
+val x58 = x56 
+val x61 = x58.flatMap{ case x59 => 
+ x59.calls.map( x60 => Recordf3dcde1a3ed243779e80476f20c16289(x59.reference, x60.altCnt, x60.refCnt, x59.alternate, x59.ORStep1_index, x59.contig, x59.start, x60.gender) )
+}.as[Recordf3dcde1a3ed243779e80476f20c16289]
+ 
+val x63 = x61.withColumn("maleRatio", when(col("gender") === "male", when(col("refCnt") === 0.0, 0.0).otherwise(col("altCnt") / col("refCnt"))).otherwise(0.0))
+.withColumn("femaleRatio", when(col("gender") === "female", when(col("refCnt") === 0.0, 0.0).otherwise(col("altCnt") / col("refCnt"))).otherwise(0.0)).as[Recordb54acab0b9d949d8a65e428c7a4c95c3]
+ 
+val x65 = x63.groupByKey(x64 => Record8a97562c78a64878b42c891fc590eae3(x64.contig, x64.start, x64.reference, x64.alternate))
+ .agg(typed.sum[Recordb54acab0b9d949d8a65e428c7a4c95c3](x64 => x64.maleRatio)
+,typed.sum[Recordb54acab0b9d949d8a65e428c7a4c95c3](x64 => x64.femaleRatio)
+).mapPartitions{ it => it.map{ case (key, maleRatio, femaleRatio) =>
+   Recordb54acab0b9d949d8a65e428c7a4c95c3(key.reference, maleRatio, key.alternate, femaleRatio, key.contig, key.start)
+}}.as[Recordb54acab0b9d949d8a65e428c7a4c95c3]
+ 
+val x66 = x65
+val ORStep2 = x66
+//ORStep2.print
+//ORStep2.cache
+//ORStep2.count
+val x67 = ORStep2.withColumn("ORStep2_index", monotonically_increasing_id())
+ .as[Record0878c9d94fb24feca494630c8fcc53fe]
+ 
+val x69 = x67 
+val x71 = x69.withColumn("odds", when(col("maleRatio") === 0.0, 0.0).otherwise(col("femaleRatio") / col("maleRatio"))).as[Record8925464e5ac642f2a363391f040e6c69]
+ 
+val x72 = x71
+val OddsRatio = x72
 OddsRatio.collect.foreach(println(_))
 //OddsRatio.cache
-// OddsRatio.count
-
+OddsRatio.count
 
   }
 
