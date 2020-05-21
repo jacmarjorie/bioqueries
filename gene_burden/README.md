@@ -81,7 +81,7 @@ schema:
 
 5. Perform the analysis in Spark. How do these compare to the NRC queries, how are they different?
 
-#### Using the Dataset API
+### Using the Dataset API
 
 Up to now, we have been using the RDD API. We find, in general, that there are performance benefits with using the Dataset API. 
 At this point, you should extend your VCF loader function to return a Dataset type so you can describe your analyses in the 
@@ -90,7 +90,7 @@ Dataset API. You can see an example of how I have done this [here](https://githu
 You shoud edit and extend the case class to include whatever information you feel necessary for your analysis, and these 
 may correspond to various loader functions.
 
-#### Building cohorts with mutliple sample information
+### Building cohorts with mutliple sample information
 
 The VCF file in the previous section was a consensus VCF, meaning this is consolidated variant information for a group of 
 samples (this is why the VCF file did not have sample information). We will now look at VCFs that contain multiple 
@@ -165,7 +165,7 @@ and
 
 `{(population: String, pathways: {(name: String, genes: { (name: String, burden: Int) } ) })}`
 
-#### Integrating the above into feature sets for a generic classification model 
+### Integrating the above into feature sets for a generic classification model 
 
 **more information to come**: use what we have learned from the above queries to create categorical features as input to a generic classification model. For 1000 genomes we only have population information, so we use that as an example. The most basic thing being - 
 can you use gene burden or pathway burden to determine the population from which the sample came? Basic counts aren't necessarily a good measure so we will work on upgrade this to a better function, integrating more annotation information / other biological data modalities, and also trying these methods with more interesting biomedical datasets (like TCGA) to maybe look at building feature sets for cancer datasets... 
