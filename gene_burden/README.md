@@ -1,4 +1,4 @@
-## Gene Burden Example
+# Gene Burden Example
 
 Here we provide setup instructions for performing gene burden calculation in Spark. 
 
@@ -81,12 +81,99 @@ schema:
 
 5. Perform the analysis in Spark. How do these compare to the NRC queries, how are they different?
 
-#### Building cohorts with mutliple sample information
+### Using the Dataset API
 
-This will include additional resources and dealing with multi-sample VCFs, such as those described [here](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/). I will update these as we progress with the above.
+Up to now, we have been using the RDD API. We find, in general, that there are performance benefits with using the Dataset API. 
+At this point, you should extend your VCF loader function to return a Dataset type so you can describe your analyses in the 
+Dataset API. You can see an example of how I have done this [here](https://github.com/jacmarjorie/bioqueries/blob/gwas/gwas/gwas/src/main/scala/gwas/VariantLoader.scala#L36-L45).
+
+You shoud edit and extend the case class to include whatever information you feel necessary for your analysis, and these 
+may correspond to various loader functions.
+
+### Building cohorts with mutliple sample information
+
+The VCF file in the previous section was a consensus VCF, meaning this is consolidated variant information for a group of 
+samples (this is why the VCF file did not have sample information). We will now look at VCFs that contain multiple 
+samples. Navigate to: `ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20130502/`, you will see a series of VCF files - one for each chromosome. Download `ALL.chr22.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz`. This is one of the smaller chromsomes, but when you uncompress it, it will still be about 10G which is too large for local testing. Make a subset of this file by catting the first 10000 lines into a file: `head -n 10000 ALL.chr22.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf > sub_chr22.vcf`.
+
+**Note**: this is VCF4.1, you can see this in the header information of the VCF file (`head -1 sub_chr22.vcf`). 
+
+If you look around at this file, you will see the INFO field is slightly different than the old one:
+```
+AC=1;AF=0.000199681;AN=5008;NS=2504;DP=8012;EAS_AF=0;AMR_AF=0;AFR_AF=0;EUR_AF=0;SAS_AF=0.001;AA=.|||;VT=SNP GT
+```
+This is just a list of metadata. If you are curious to know more about these fields, you can look at the `##INFO` lines in the header to see the description for these values. For example, `AC`:
+```
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Total number of alternate alleles in called genotypes">
+```
+More importantly, you will also notice that these variants do not have annotations. It will be part of the task to associate these variants to genes by location. 
+
+1. Download the map file at ftp://ftp.ensembl.org/pub/grch37/release-100/gtf/homo_sapiens/Homo_sapiens.GRCh37.87.chr.gtf.gz. Since we are only using chr22 for now, you can subet this file to contain only chr22 genes. Read this into Spark into a Scala case class that would be suitable for accessing the necessary information. For example, to pair with the gene name we may want a case class with the type: `{(contig: Int, start: Int, end: Int, gene_name: String)}`. 
+
+2. Add this table to your schema, and write out the NRC query that would correspond to joining this information with the variant information. Note that a gene has a contig (chromosome), start, and end position. A variant lies on a gene if the variant genomic position is on the same contig (chromosome) and lies within the inclusive range of the gene start and end positions. 
+
+3. Perform this join in Spark using the Dataset API (ie. write the analysis corresponding to the NRC query you defined in 2.
+
+4. Now that we have sample information write the NRC and the associated program to perform the following:
+* extend the gene burden analysis to work for each sample, returning an nested object: 
+
+`{(sample: String, genes: { (name: String, burden: Int) })}`
+
+* extend the pathway burden analysis to work for each sample, play around with returning various types of output:
+
+`{(sample: String, genes: { (name: String, burden: Int) })}`
+
+and 
+
+`{(sample: String, pathways: {(name: String, genes: { (name: String, burden: Int) })})}`
+
+and
+
+`{(sample: String, pathways: {(name: String, total_burden: Int, genes: { (name: String, burden: Int) })})}`
+
+and
+
+`{(sample: String, pathways: {(name: String, total_burden: Int)})}`
+
+5. Now that we have by-sample information, use the above gene burden inputs to cluster patients based on their gene and pathway burden (write NRC and corresponding analysis for each). Start with a simple definition of gene burden - a count of 0 is no burden and anything over 0 is burdened:
+* For each gene, create a group of samples that are burdened and not burdened: 
+
+`{(gene_name: String, burdened: {(sample_name: String)}, not_burdened: {(sample_name: String)} )}`
+
+* For each pathway, create a group of samples that are burdened and not burdened: 
+
+`{(pathway_name: String, burdened: {(sample_name: String)}, not_burdened: {(sample_name: String)} )}`
+
+6. Recall that we also have metadata information about the samples (mainly population information). Write the following NRC queries and perform the associated analysis to integrate this information:
+* Group the variant information into samples by population: 
+
+`{(population_name: String, samples: {(name: String, variants: {(...)})} )}`
+
+* Calculate gene burden by population:
+
+`{(gene: String, populations: {(name: String, burden: Int)} )}`
+
+* Pathway by population: 
+
+`{(pathway: String, genes: {(gene: String, populations: {(name: String, burden: Int)} )})}`
+
+and 
+
+`{(pathway: String, populations: {(name: String, burden: Int)} )}`
+
+* Population by burden
+
+`{(population: String, pathways: {(name: String, genes: { (name: String, burden: Int) } ) })}`
+
+### Integrating the above into feature sets for a generic classification model 
+
+**more information to come**: use what we have learned from the above queries to create categorical features as input to a generic classification model. For 1000 genomes we only have population information, so we use that as an example. The most basic thing being - 
+can you use gene burden or pathway burden to determine the population from which the sample came? Basic counts aren't necessarily a good measure so we will work on upgrade this to a better function, integrating more annotation information / other biological data modalities, and also trying these methods with more interesting biomedical datasets (like TCGA) to maybe look at building feature sets for cancer datasets... 
 
 ### Useful Resources
 
-When you are working, you may want to subset the VCF file to make it only a few samples, 
+* When you are working, you may want to subset the VCF file to make it only a few samples, 
 you can do this with [bcftools](https://bioinformatics.stackexchange.com/questions/3477/how-to-subset-samples-from-a-vcf-file) for more information.
+
+* If you run into issues using gene names (ie. they aren't unique identifiers), then you may find it useful to switch to using a more stable identifier. You can download the [pathway information with Entrez id's](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/7.1/c2.cp.v7.1.entrez.gmt). And you can use various mapping files to associate ids to eachother, such as those found at http://genome.ucsc.edu/cgi-bin/hgTables. It may take a bit of playing around to figure out your preferred method, but there are a lot of suggestions that come up on google.
 
