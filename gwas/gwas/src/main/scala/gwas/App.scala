@@ -49,20 +49,30 @@ val x38 = x36
 val x39 = x38.withColumn("genotypes_index", monotonically_increasing_id())
  .as[Record724565d38152420489ffd38c187666b8]
  
+// flatten the genotype information from the vcf
 val x42 = x39.flatMap{
  case x40 => if (x40.genotypes.isEmpty) Seq(Recordc4140665d5e54f1293d316873bec92bf(x40.reference, None, x40.alternate, x40.variants_index, x40.contig, x40.start, None, x40.genotypes_index))
    else x40.genotypes.map( x41 => Recordc4140665d5e54f1293d316873bec92bf(x40.reference, Some(x41.g_sample), x40.alternate, x40.variants_index, x40.contig, x40.start, Some(x41.call), x40.genotypes_index) )
 }.as[Recordc4140665d5e54f1293d316873bec92bf]
- 
+
+// this is the metadata file with the population information
 val x43 = metadata.withColumn("metadata_index", monotonically_increasing_id())
  .as[Recorde47f1861ff3d40469ad3376ea93fe11b]
  
+// join the sample information (extracted from the flattening above) with the population information
 val x46 = x42.join(x43, 
  col("g_sample") === col("m_sample"), "left_outer").as[Record30e8c577ae9f4e6d9a697eeb2b5a182f]
  
+// this counts the number of alternate and reference alleles
+// when call == 1 this is heterozygous, meanining one copy of alt and one copy of ref 
+// when call == 2 this is homozygous alternate, meaning two copies of the alternate allele 
+// when call == 0 this is homozygous reference (wild type), meaning two copies of the reference allele
 val x48 = x46.withColumn("altCnt", when(col("call") === 1, 1.0).otherwise(when(col("call") === 2, 2.0).otherwise(0.0)))
 .withColumn("refCnt", when(col("call") === 1, 1.0).otherwise(when(col("call") === 2, 0.0).otherwise(2.0))).as[Record14ed2d17c2b442fa972f5c2fab3a5ebe]
- 
+
+// once I count the number of reference and alternate alleles, I used dataset.agg() to sum the reference and alternate alleles for each variant
+// i'm using gender information from the population file to create a male and female cohort for each variant
+// this is how you sumBy
 val x50 = x48.groupByKey(x49 => Recordafe29ffb38944c45a52ec7ec715907a7(x49.reference, x49.alternate, x49.variants_index, x49.contig, x49.start, x49.gender))
  .agg(typed.sum[Record14ed2d17c2b442fa972f5c2fab3a5ebe](x49 => x49.refCnt)
 ,typed.sum[Record14ed2d17c2b442fa972f5c2fab3a5ebe](x49 => x49.altCnt)
@@ -70,6 +80,9 @@ val x50 = x48.groupByKey(x49 => Recordafe29ffb38944c45a52ec7ec715907a7(x49.refer
    Record14ed2d17c2b442fa972f5c2fab3a5ebe(key.reference, altCnt, refCnt, key.alternate, key.variants_index, key.contig, key.start, key.gender)
 }}.as[Record14ed2d17c2b442fa972f5c2fab3a5ebe]
  
+// now that i have the counts, I group by variants and gender to get the nested data structure back:
+// {(contig, start, reference, alternate, cohorts := {(gender, refCnt, altCnt)} )}
+// this how you group back up
 val x52 = x50.groupByKey(x51 => Record0144fddc9d2848c08f90477906a9a687(x51.reference, x51.alternate, x51.variants_index, x51.contig, x51.start)).mapGroups{
  case (key, value) => 
    val grp = value.flatMap(x51 => 
