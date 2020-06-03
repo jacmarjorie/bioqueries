@@ -11,7 +11,7 @@ cd iRIGS_code
 cat SNP_file/SCZ_108_loci | tr "\t" "|" | tail -n +2 > SNP_file/SCZ_108_loci.csv
 
 # Gene
-cat supporting_files/All_human_genes | tr "\t" "|" | tail -n +2 > supporting_files/All_human_genes.csv
+cat supporting_files/All_human_genes | tr "\t" "|" | tail -n +2 | sed 's/\.[0-9]//' > supporting_files/All_human_genes.csv
 # Cp
 cat supporting_files/BrainHiC/S22_TSS_CP.txt | cut -f 1-7 | tr "\t" "|" | tail -n +2 > supporting_files/BrainHiC/S22_TSS_CP.csv
 # Gz
