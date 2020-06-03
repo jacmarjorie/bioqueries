@@ -26,7 +26,7 @@ val variants = vloader.loadVCF.repartition(8)
 
 5. Package application: `sbt package`
 
-6. Run the spark and request resources from this spark cluster:
+6. Run the spark application and request resources from this spark cluster:
 
 ```
 spark-submit --class gwas.App \
