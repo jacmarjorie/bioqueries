@@ -15,7 +15,7 @@ cat supporting_files/All_human_genes | tr "\t" "|" | tail -n +2 | sed 's/\.[0-9]
 # Cp
 cat supporting_files/BrainHiC/S22_TSS_CP.txt | cut -f 1-7 | tr "\t" "|" | tail -n +2 > supporting_files/BrainHiC/S22_TSS_CP.csv
 # Gz
-cat supporting_files/BrainHiC/S23_TSS_GZ.txt | cut -f 1-7 | tr "\t" "|" | 's/^M$//' | tail -n +2 > supporting_files/BrainHiC/S23_TSS_GZ.csv
+cat supporting_files/BrainHiC/S23_TSS_GZ.txt | tr -d '\r' | cut -f 1-7 | tr "\t" "|"  | tail -n +2 > supporting_files/BrainHiC/S23_TSS_GZ.csv
 # Cap
 cat supporting_files/capHiC/GM12878_DRE_number | tr "\t" "|" | tail -n +2 > supporting_files/capHiC/GM12878_DRE_number.csv
 # Fantom 
