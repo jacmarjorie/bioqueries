@@ -1,0 +1,778 @@
+{
+    "hits": [
+        {
+            "end": 74930515, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "1", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000116783"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "1", 
+                    "biotype": "antisense", 
+                    "geneId": "ENSG00000233894"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "3_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "1", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000259030"
+                }
+            ], 
+            "start": 74930515, 
+            "mutationId": "MU130162756", 
+            "mutation": "C>T", 
+            "donorId": "DO9988", 
+            "chromosome": "1", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 24, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 69
+                }
+            ]
+        }, 
+        {
+            "end": 51301774, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000142513"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000167747"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "snoRNA", 
+                    "geneId": "ENSG00000220988"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "snoRNA", 
+                    "geneId": "ENSG00000221241"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "snoRNA", 
+                    "geneId": "ENSG00000221381"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "19", 
+                    "biotype": "antisense", 
+                    "geneId": "ENSG00000268375"
+                }
+            ], 
+            "start": 51301774, 
+            "mutationId": "MU130214910", 
+            "mutation": "G>T", 
+            "donorId": "DO9988", 
+            "chromosome": "19", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 4, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 29
+                }
+            ]
+        }, 
+        {
+            "end": 57351187, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "3_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "3_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "17", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000153982"
+                }
+            ], 
+            "start": 57351187, 
+            "mutationId": "MU130194861", 
+            "mutation": "A>G", 
+            "donorId": "DO9988", 
+            "chromosome": "17", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 7, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 17
+                }
+            ]
+        }, 
+        {
+            "end": 152785167, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "missense_variant", 
+                            "functionalImpact": "Low"
+                        }
+                    ], 
+                    "chromosome": "1", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000196734"
+                }
+            ], 
+            "start": 152785167, 
+            "mutationId": "MU30916613", 
+            "mutation": "G>A", 
+            "donorId": "DO9988", 
+            "chromosome": "1", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 30, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 88
+                }
+            ]
+        }, 
+        {
+            "end": 114920422, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "3_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "stop_gained", 
+                            "functionalImpact": "High"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "3_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "stop_gained", 
+                            "functionalImpact": "High"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "intron_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "10", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000148737"
+                }
+            ], 
+            "start": 114920422, 
+            "mutationId": "MU100133", 
+            "mutation": "C>T", 
+            "donorId": "DO9988", 
+            "chromosome": "10", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 16, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 74
+                }
+            ]
+        }, 
+        {
+            "end": 11593486, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "missense_variant", 
+                            "functionalImpact": "Low"
+                        }, 
+                        {
+                            "consequenceType": "missense_variant", 
+                            "functionalImpact": "Low"
+                        }
+                    ], 
+                    "chromosome": "17", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000007174"
+                }
+            ], 
+            "start": 11593486, 
+            "mutationId": "MU69104", 
+            "mutation": "C>A", 
+            "donorId": "DO9988", 
+            "chromosome": "17", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 9, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 52
+                }
+            ]
+        }, 
+        {
+            "end": 67912502, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "stop_gained", 
+                            "functionalImpact": "High"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "16", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000038358"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "downstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "16", 
+                    "biotype": "miRNA", 
+                    "geneId": "ENSG00000221526"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "16", 
+                    "biotype": "lincRNA", 
+                    "geneId": "ENSG00000263126"
+                }
+            ], 
+            "start": 67912502, 
+            "mutationId": "MU130220569", 
+            "mutation": "T>A", 
+            "donorId": "DO9988", 
+            "chromosome": "16", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 43, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 125
+                }
+            ]
+        }, 
+        {
+            "end": 99978207, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "synonymous_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "2", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000158417"
+                }
+            ], 
+            "start": 99978207, 
+            "mutationId": "MU69014", 
+            "mutation": "A>G", 
+            "donorId": "DO9988", 
+            "chromosome": "2", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 16, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 51
+                }
+            ]
+        }, 
+        {
+            "end": 152538689, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "1", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000185966"
+                }
+            ], 
+            "start": 152538689, 
+            "mutationId": "MU130144028", 
+            "mutation": "G>A", 
+            "donorId": "DO9988", 
+            "chromosome": "1", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 26, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 85
+                }
+            ]
+        }, 
+        {
+            "end": 74104798, 
+            "projectId": "COAD-US", 
+            "genes": [
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "exon_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "missense_variant", 
+                            "functionalImpact": "Low"
+                        }, 
+                        {
+                            "consequenceType": "missense_variant", 
+                            "functionalImpact": "Low"
+                        }
+                    ], 
+                    "chromosome": "6", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000080007"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }, 
+                        {
+                            "consequenceType": "5_prime_UTR_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "6", 
+                    "biotype": "protein_coding", 
+                    "geneId": "ENSG00000203907"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "6", 
+                    "biotype": "pseudogene", 
+                    "geneId": "ENSG00000224221"
+                }, 
+                {
+                    "consequence": [
+                        {
+                            "consequenceType": "upstream_gene_variant", 
+                            "functionalImpact": "Unknown"
+                        }
+                    ], 
+                    "chromosome": "6", 
+                    "biotype": "snoRNA", 
+                    "geneId": "ENSG00000238464"
+                }
+            ], 
+            "start": 74104798, 
+            "mutationId": "MU70089", 
+            "mutation": "C>T", 
+            "donorId": "DO9988", 
+            "chromosome": "6", 
+            "observations": [
+                {
+                    "rawDataAccession": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "rawDataRepository": "GDC", 
+                    "matchedICGCSampleId": "SA108276", 
+                    "sequencingStrategy": "WXS", 
+                    "submittedMatchedSampleId": "TCGA-A6-6142-10A-01D-1771-10", 
+                    "biologicalValidationStatus": "not tested", 
+                    "icgcSpecimenId": "SP21640", 
+                    "mutantAlleleReadCount": 13, 
+                    "verificationStatus": "not tested", 
+                    "platform": "Illumina GA sequencing", 
+                    "icgcSampleId": "SA108181", 
+                    "variationCallingAlgorithm": "TCGA-MC3 https://gdc.cancer.gov/about-data/publications/mc3-2017", 
+                    "submittedSampleId": "TCGA-A6-6142-01A-11D-1771-10", 
+                    "totalReadCount": 59
+                }
+            ]
+        }
+    ], 
+    "pagination": {
+        "count": 10, 
+        "sort": "donorId", 
+        "from": 1, 
+        "pages": 9167671, 
+        "page": 1, 
+        "total": 91676704, 
+        "order": "desc", 
+        "size": 10
+    }
+}
