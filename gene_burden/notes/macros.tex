@@ -1,0 +1,86 @@
+\lstdefinelanguage{NRC}{
+  morekeywords={for, in, union, if, then, else, match, let},%
+  sensitive,%
+  morecomment=[l]//,%
+  morecomment=[s]{/*}{*/},%
+  morestring=[b]",%
+  morestring=[b]',%
+  showstringspaces=false,%
+  breaklines=true,%
+  mathescape=true,%
+  showspaces=false,
+  showtabs=false, 
+  showstringspaces=false,
+  breakatwhitespace=true,
+  % xleftmargin=2em,
+  % columns=[c]fixed,%
+  % basewidth={0.5em, 0.40em},%
+  aboveskip=1pt,%\smallskipamount,
+  belowskip=1pt,%\negsmallskipamount,
+  lineskip=-0.2pt,
+%  backgroundcolor=\color{listingbg},
+%  basicstyle=\linespread{0.4}\footnotesize\ttfamily,
+   % numbers=left,
+   % numbersep=5pt,
+   % numberstyle=\tiny\ttfamily,
+  basicstyle=\ttfamily\color{white!15!black},
+  keywordstyle=\ttfamily\bfseries\color{blue!80!black},%
+  columns=fullflexible,
+%  commentstyle=\commentstyle
+  escapeinside={(*@}{@*)}
+}[keywords,comments,strings]%
+
+
+% NRC
+\newcommand{\nrcagg}{\kw{NRC}}
+\newcommand{\nrcaggshr}{\nrcagg^{Lbl+\lambda}}
+\newcommand{\nrcaggshrmat}{\nrcagg^{Lbl}}
+
+\newcommand{\kwd}[1]{\texttt{\textup{#1}}\xspace}
+\newcommand{\idfor}{\kwd{for}}
+\newcommand{\idin}{\kwd{in}}
+\newcommand{\idunion}{\kwd{union}}
+\newcommand{\idif}{\kwd{if}}
+\newcommand{\idthen}{\kwd{then}}
+\newcommand{\idelse}{\kwd{else}}
+\newcommand{\idlet}{\kwd{let}}
+\newcommand{\idmatch}{\kwd{match}}
+
+\newcommand{\ckwd}[1]{\kwd{\color{blue!80!black} #1}}
+\newcommand{\cidfor}{\ckwd{\idfor}}
+\newcommand{\cidin}{\ckwd{\idin}}
+\newcommand{\cidunion}{\ckwd{\idunion}}
+\newcommand{\cidif}{\ckwd{\idif}}
+\newcommand{\cidthen}{\ckwd{\idthen}}
+\newcommand{\cidelse}{\ckwd{\idelse}}
+\newcommand{\cidlet}{\ckwd{\idlet}}
+\newcommand{\cidmatch}{\ckwd{\idmatch}}
+
+\newcommand{\getkw}{\kwd{get}}
+\newcommand{\dedup}{\kwd{dedup}}
+\newcommand{\groupby}{\kwd{groupBy}}
+\newcommand{\sumby}{\kwd{sumBy}}
+\newcommand{\lookup}{\kwd{Lookup}}
+\newcommand{\dictunion}{\kwd{DictUnion}}
+\newcommand{\newlabelof}{\kwd{NewLabel}}
+\newcommand{\flatc}{\kw{Flat}}
+\newcommand{\dict}{\kw{Dict}}
+\newcommand{\shredf}[1]{\mathcal{F}\lBrack#1\rBrack}
+\newcommand{\shredd}[2]{\mathcal{D}\lBrack#2\rBrack_{#1}}
+
+\newcommand{\groupatt}{\kwd{group}}
+\newcommand{\labelatt}{\kwd{label}}
+\newcommand{\valueatt}{\kwd{value}}
+
+\newcommand{\topbag}{\kw{TopBag}}
+\newcommand{\labeldomain}{\kw{LabDomain}}
+\newcommand{\ateq}{:=}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\newcommand{\assigneq}{\Leftarrow}
+
+%inputs
+\newcommand{\Variants}{\texttt{Variants}\xspace}
+\newcommand{\Genes}{\texttt{Genes}\xspace}
+\newcommand{\ByGene}{\texttt{ByGene}\xspace}
+\newcommand{\Metadata}{\texttt{Metadata}\xspace}
