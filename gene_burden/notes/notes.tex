@@ -1,0 +1,122 @@
+% vi: filetype=tex spell spelllang=en_us:
+
+\documentclass{article}
+%\documentclass{vldb}
+\usepackage{graphicx}
+% \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{xcolor}
+\usepackage{xspace}
+% \usepackage{proof}
+\usepackage{fancyvrb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage{forest}
+\usepackage{subcaption}
+\usepackage{adjustbox}
+%not sure if all these are needed
+\usetikzlibrary{positioning,shadows,arrows,trees,shapes,fit,shapes.geometric,backgrounds,arrows.meta}
+\usepackage{tikz-qtree}
+\usepackage{amssymb}
+
+\def\sojoin{\setbox0=\hbox{$\bowtie$}%
+  \rule[-.02ex]{.25em}{.4pt}\llap{\rule[\ht0]{.25em}{.4pt}}}
+\def\sleftouterjoin{\mathbin{\sojoin\mkern-5.8mu\bowtie}}
+
+\newcolumntype{L}{>{$}l<{$}}
+
+\input{macros}
+
+\begin{document}
+\title{Gene Burden}
+\date{}
+
+\maketitle
+
+\onecolumn
+
+\section{Gene Burden Queries}
+
+We detail the queries for gene burden...
+
+\subsection{VCF Input}
+
+
+\subsubsection{Input NRC}
+
+% \begin{lstlisting}[language=NRC]
+%  sumBy$_{\hspace{0.15mm}sample, gene}^{\hspace{0.15mm}burden}$(
+%   $\cidfor ~ v ~ \cidin ~ \Variants ~ \cidunion$
+%     $\cidfor ~ g ~ \cidin ~ \Genes ~ \cidunion$
+%         $\cidif ~ v.contig == g.chromosome$ 
+%           $\& ~ g.start <= v.start ~ \& ~ v.start <= g.end ~ \cidthen$
+%         $\cidfor ~ c ~ v.genotypes ~ \cidunion$
+%           $\{\<\, sample \ateq c.sample,$ $gene \ateq g.name,$
+%             $ burden \ateq \cidif ~ c.call ~ != 0 ~ \cidthen ~ 1.0 ~ else ~ 0.0 \,\>\}$)
+% \end{lstlisting}
+
+\begin{lstlisting}[language=NRC]
+$\ByGene$ $\assigneq$ $\cidfor ~ g ~ \cidin ~ \Genes ~ \cidunion$
+    $\{\<\ gene \ateq g.name,$ $samples \ateq$ sumBy$_{\hspace{0.15mm}sample}^{\hspace{0.15mm}burden}$(
+      $\cidfor ~ v ~ \cidin ~ \Variants ~ \cidunion$
+        $\cidif ~ v.contig == g.chromosome$ 
+          $\& ~ g.start <= v.start ~ \& ~ v.start <= g.end ~ \cidthen$
+        $\cidfor ~ c ~ v.genotypes ~ \cidunion$
+          $\{\<\, sample \ateq c.sample, burden \ateq \cidif ~ c.call ~ != 0 ~ \cidthen ~ 1.0 ~ else ~ 0.0 \,\>\}) 
+    \,\>\}$
+
+$\cidfor ~ s ~ \cidin ~ \Metadata ~ \cidunion$
+  $\{\<\ sample \ateq s.sample,$ $samples \ateq$
+    $\cidfor ~ g ~ \cidin ~ \ByGene ~ \cidunion$
+      $\cidfor ~ b ~ \cidin g.burden ~ \cidunion$
+        $\cidif ~ s.sample = b.sample ~ \cidthen$
+          $\{\<\, gene \ateq g.gene,$ $burden \ateq b.burden \,\>\} 
+  \,\>\}$ 
+
+\end{lstlisting}
+
+\subsubsection{Plan produced by the standard pipeline}
+
+% \begin{forest}
+% for tree={
+%   s sep=10mm,
+%   l sep = 0.75em, 
+%   l = 0,
+% },
+% [$\pi_{\rname, \ldots, \rnations}$,
+% [$\sleftouterjoin_{\rid}$
+%   [\Region]
+%   [${\mbox{\large$\Gamma^{\bagunion\,}$}}^{\rid}_{\texttt{\nname, \ldots, \ncusts}}$
+%     [$\sleftouterjoin_{\nid}$
+%         [\Nation]
+%         [${\mbox{\large$\Gamma^{\bagunion\,}$}}^{\nid}_{\texttt{\cname, \ldots, \corders}}$
+%           [$\sleftouterjoin_{\cid}$
+%               [\Customer]
+%               [${\mbox{\large$\Gamma^{\bagunion\,}$}}^{\cid}_{\texttt{\odate, \ldots, \oparts}}$
+%                 [$\sleftouterjoin_{\oid}$
+%                   [\Order]
+%                   [${\mbox{\large$\Gamma^{\bagunion\,}$}}^{\oid}_{\texttt{\lqty, \pprice}}$
+%                     [\Lineitem]]]]]]]]]]
+% \end{forest}
+
+\medskip
+
+% \begin{lstlisting}[language=Scala,basicstyle=\ttfamily] 
+% Orders.groupByKey(o => o.oid)
+%       $\,$.cogroup(Lineitem.groupByKey(l => l.oid))(
+%           case (key, orders, lineitems) => 
+%             val oparts = 
+%               lineitems.map(l => (l.pid, l.lqty)).toSeq
+%             orders.map(o => (o.odate, oparts)))
+% \end{lstlisting}
+
+\medskip
+
+\subsubsection{Plan produced by the shredded pipeline}
+
+
+\end{document}
